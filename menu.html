@@ -377,15 +377,35 @@
         </div>
     </div>
 
-    <script>
-        // Data Store (Real time live data with LocalStorage backup)
-        let menuData = JSON.parse(localStorage.getItem('homebite_menu')) || [];
+<script>
+        // Backend API URL Configuration
+        // Agar frontend aur backend dono Render par hain, toh aap sirf '/api/menu' bhi rakh sakte hain.
+        const API_URL = 'https://homebite-admin.onrender.com/api/menu'; 
+
+        // Data Store (Real time live data fetched from Database)
+        let menuData = [];
         let base64ImageString = "";
 
-        // Initial Load
+        // Initial Load - Ab ye Render se fresh data lekar aayega
         window.onload = function() {
-            renderMenu();
+            fetchMenu();
         };
+
+        // 1. Fetch Menu items from Backend Database
+        async function fetchMenu() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("Menu fetch karne mein problem aayi!");
+                
+                menuData = await response.json();
+                renderMenu();
+            } catch (error) {
+                console.error("Error fetching menu:", error);
+                // Fallback: Agar backend down ho, toh local storage check karega (sirf safety ke liye)
+                menuData = JSON.parse(localStorage.getItem('homebite_menu')) || [];
+                renderMenu();
+            }
+        }
 
         // Render function to dynamically build categories & item cards
         function renderMenu() {
@@ -396,7 +416,7 @@
                 wrapper.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-utensils"></i>
-                        <p>Menu ekdum khali hai! "Add New Item" par click karke real item add karein.</p>
+                        <p>Menu is empty!</p>
                     </div>`;
                 return;
             }
@@ -424,6 +444,9 @@
                 grid.className = 'menu-grid';
 
                 categories[cat].forEach(item => {
+                    // MongoDB ki '_id' ya custom 'id' dono ko handle karne ke liye
+                    const itemId = item._id || item.id; 
+
                     let card = document.createElement('div');
                     card.className = 'menu-card';
                     
@@ -462,13 +485,13 @@
                                 <div class="stock-control">
                                     <span>${item.inStock ? '🟢 In Stock' : '🔴 Out of Stock'}</span>
                                     <label class="switch">
-                                        <input type="checkbox" ${item.inStock ? 'checked' : ''} onchange="toggleItemStock('${item.id}')">
+                                        <input type="checkbox" ${item.inStock ? 'checked' : ''} onchange="toggleItemStock('${itemId}')">
                                         <span class="slider"></span>
                                     </label>
                                 </div>
                                 <div class="action-icons">
-                                    <button class="icon-btn edit" onclick="editItem('${item.id}')" title="Edit Item"><i class="fas fa-pen"></i></button>
-                                    <button class="icon-btn delete" onclick="deleteItem('${item.id}')" title="Delete Item"><i class="fas fa-trash-alt"></i></button>
+                                    <button class="icon-btn edit" onclick="editItem('${itemId}')" title="Edit Item"><i class="fas fa-pen"></i></button>
+                                    <button class="icon-btn delete" onclick="deleteItem('${itemId}')" title="Delete Item"><i class="fas fa-trash-alt"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -546,8 +569,8 @@
             }
         }
 
-        // Create & Update Handler
-        function handleFormSubmit(e) {
+        // 2. Create & Update Handler (Sends POST or PUT requests to Database)
+        async function handleFormSubmit(e) {
             e.preventDefault();
             
             const editId = document.getElementById('editItemId').value;
@@ -565,46 +588,51 @@
             const priceFull = document.getElementById('priceFull').value;
             const inStock = document.getElementById('itemStockToggle').checked;
 
-            if (editId) {
-                // Edit existing item logic
-                let itemIndex = menuData.findIndex(item => item.id === editId);
-                if (itemIndex > -1) {
-                    menuData[itemIndex].name = name;
-                    menuData[itemIndex].category = category;
-                    menuData[itemIndex].foodType = foodType;
-                    menuData[itemIndex].desc = desc;
-                    menuData[itemIndex].priceModel = priceModel;
-                    menuData[itemIndex].price = price;
-                    menuData[itemIndex].priceHalf = priceHalf;
-                    menuData[itemIndex].priceFull = priceFull;
-                    menuData[itemIndex].inStock = inStock;
-                    if(base64ImageString) {
-                        menuData[itemIndex].image = base64ImageString;
-                    }
-                }
-            } else {
-                // Add new item logic
-                const newItem = {
-                    id: 'item_' + Date.now(),
-                    name, category, foodType, desc, priceModel, price, priceHalf, priceFull, inStock,
-                    image: base64ImageString || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80'
-                };
-                menuData.push(newItem);
-            }
+            // Request Payload data structure
+            const itemPayload = {
+                name, category, foodType, desc, priceModel, price, priceHalf, priceFull, inStock,
+                image: base64ImageString || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80'
+            };
 
-            localStorage.setItem('homebite_menu', JSON.stringify(menuData));
-            closeModal();
-            renderMenu();
+            try {
+                let response;
+                if (editId) {
+                    // Item update karne ke liye (PUT request)
+                    response = await fetch(`${API_URL}/${editId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(itemPayload)
+                    });
+                } else {
+                    // Naya item create karne ke liye (POST request)
+                    response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(itemPayload)
+                    });
+                }
+
+                if (!response.ok) throw new Error("Server ne request accept nahi ki.");
+
+                // LocalStorage backup update (Optional)
+                localStorage.setItem('homebite_menu', JSON.stringify(menuData));
+                
+                closeModal();
+                fetchMenu(); // Fresh data pull karega server se update ke baad
+            } catch (error) {
+                console.error("Form submit error:", error);
+                alert("Database mein item save karne mein dikkat aayi!");
+            }
         }
 
-        // Edit Button handler
+        // Edit Button handler - Loads data into Modal fields
         function editItem(id) {
-            const item = menuData.find(i => i.id === id);
+            const item = menuData.find(i => (i._id === id || i.id === id));
             if (!item) return;
 
             openModal('edit');
             document.getElementById('modalTitle').innerText = "Edit Food Item";
-            document.getElementById('editItemId').value = item.id;
+            document.getElementById('editItemId').value = item._id || item.id;
             document.getElementById('itemName').value = item.name;
             
             // Manage Category selection populate
@@ -628,15 +656,15 @@
 
             // Populate other fields
             document.querySelector(`input[name="foodType"][value="${item.foodType}"]`).checked = true;
-            document.getElementById('itemDesc').value = item.desc;
+            document.getElementById('itemDesc').value = item.desc || "";
             document.querySelector(`input[name="priceModel"][value="${item.priceModel}"]`).checked = true;
             togglePriceFields(item.priceModel);
             
             if (item.priceModel === 'single') {
-                document.getElementById('itemPrice').value = item.price;
+                document.getElementById('itemPrice').value = item.price || "";
             } else {
-                document.getElementById('priceHalf').value = item.priceHalf;
-                document.getElementById('priceFull').value = item.priceFull;
+                document.getElementById('priceHalf').value = item.priceHalf || "";
+                document.getElementById('priceFull').value = item.priceFull || "";
             }
 
             if(item.image) {
@@ -646,22 +674,46 @@
             document.getElementById('itemStockToggle').checked = item.inStock;
         }
 
-        // Delete Button handler
-        function deleteItem(id) {
+        // 3. Delete Button handler (Sends DELETE request to Backend)
+        async function deleteItem(id) {
             if (confirm("Kya aap sach me is item ko menu se delete karna chahte hain?")) {
-                menuData = menuData.filter(item => item.id !== id);
-                localStorage.setItem('homebite_menu', JSON.stringify(menuData));
-                renderMenu();
+                try {
+                    const response = await fetch(`${API_URL}/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (!response.ok) throw new Error("Delete process failed on backend.");
+
+                    fetchMenu(); // List refresh karega
+                } catch (error) {
+                    console.error("Delete error:", error);
+                    alert("Item delete nahi ho paya!");
+                }
             }
         }
 
-        // Stock Toggle handler from Card directly
-        function toggleItemStock(id) {
-            let itemIndex = menuData.findIndex(item => item.id === id);
-            if (itemIndex > -1) {
-                menuData[itemIndex].inStock = !menuData[itemIndex].inStock;
-                localStorage.setItem('homebite_menu', JSON.stringify(menuData));
-                renderMenu();
+        // 4. Stock Toggle handler (Sends PUT request to update 'inStock' property)
+        async function toggleItemStock(id) {
+            let item = menuData.find(i => (i._id === id || i.id === id));
+            if (!item) return;
+
+            // Invert the existing status
+            const updatedStockStatus = !item.inStock; 
+
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...item, inStock: updatedStockStatus })
+                });
+
+                if (!response.ok) throw new Error("Stock status update failed.");
+                
+                fetchMenu(); // Re-fetch list to see latest status
+            } catch (error) {
+                console.error("Stock toggle error:", error);
+                alert("Stock status update nahi ho paya!");
+                renderMenu(); // Purane UI state ko fix karne ke liye rollback render
             }
         }
 
@@ -678,5 +730,3 @@
             statusText.style.color = toggle.checked ? "var(--text-light)" : "var(--danger)";
         }
     </script>
-</body>
-</html>
