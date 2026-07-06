@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeBite | Admin Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #e28743; 
+            --secondary-color: #f4c150;
+            --dark-bg: #050505; 
+            --card-bg: #151515;
+            --text-light: #ffffff;
+            --text-muted: #a0a0a0;
+            --danger: #ff4757;
+            --success: #2ed573;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #1a1008 0%, var(--dark-bg) 70%);
+        }
+
+        .login-container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 420px;
+            padding: 2.5rem;
+            border-radius: 16px;
+            border: 1px solid #222;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .logo-section h1 {
+            color: var(--text-light);
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 0.2rem;
+        }
+
+        .logo-section h1 span {
+            color: var(--primary-color);
+        }
+
+        .logo-section p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .form-input {
+            width: 100%;
+            background-color: #0c0c0c;
+            border: 1px solid #252525;
+            padding: 12px 15px 12px 45px;
+            border-radius: 8px;
+            color: var(--text-light);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 8px rgba(226, 135, 67, 0.2);
+        }
+
+        .forgot-link {
+            display: block;
+            text-align: right;
+            color: var(--secondary-color);
+            font-size: 0.8rem;
+            text-decoration: none;
+            margin-top: -0.5rem;
+            margin-bottom: 1.5rem;
+            transition: color 0.2s;
+        }
+
+        .forgot-link:hover {
+            color: var(--primary-color);
+        }
+
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .btn-login:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-login:active {
+            transform: translateY(1px);
+        }
+
+        #message {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            padding: 8px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .error { background-color: rgba(255, 71, 87, 0.1); color: var(--danger); border: 1px solid rgba(255, 71, 87, 0.2); }
+        .success { background-color: rgba(46, 213, 115, 0.1); color: var(--success); border: 1px solid rgba(46, 213, 115, 0.2); }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="logo-section">
+            <h1>Home<span>Bite</span></h1>
+            <p>Portal Admin Login</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Email Address</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="email" class="form-input" placeholder="admin@homebite.com" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <a href="#" class="forgot-link" onclick="alert('OTP implementation next step me karenge!')">Forgot Password?</a>
+
+            <button type="submit" class="btn-login">Sign In</button>
+        </form>
+
+        <div id="message"></div>
+    </div>
+
+    <script>
+        // === CHANGE THIS TO YOUR RENDER URL WHEN TESTING LIVE ===
+        const BACKEND_URL = "https://homebite-admin.onrender.com"; 
+        // Local testing ke liye: "http://localhost:5000"
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const msgDiv = document.getElementById('message');
+
+            msgDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    msgDiv.className = 'success';
+                    msgDiv.innerText = "Login Successful! Redirecting...";
+                    msgDiv.style.display = 'block';
+
+                    // Save token in LocalStorage for route protection
+                    localStorage.setItem('adminToken', data.token);
+
+                    // Redirect to dashboard after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.href = 'restaurant-dashboard.html';
+                    }, 1500);
+                } else {
+                    msgDiv.className = 'error';
+                    msgDiv.innerText = data.message;
+                    msgDiv.style.display = 'block';
+                }
+            } catch (error) {
+                msgDiv.className = 'error';
+                msgDiv.innerText = "Server issue. Please try again later.";
+                msgDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
