@@ -11,6 +11,10 @@
     "type": "git",
     "url": "git+https://github.com/Sonamkumari-git/homebite-admin.git"
   },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
