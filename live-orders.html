@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeBite | Live Orders</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* === VARIABLES & RESET === */
+        :root {
+            --primary-color: #e28743; 
+            --secondary-color: #f4c150;
+            --dark-bg: #050505; 
+            --section-bg: #0a0a0a; 
+            --sidebar-bg: #020202;
+            --card-bg: #151515;
+            --text-light: #ffffff;
+            --text-muted: #a0a0a0;
+            --danger: #ff4757;
+            --success: #2ed573;
+            --info: #00d2d3;
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1, h2, h3, h4, .brand-logo { font-family: 'Playfair Display', serif; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        /* === MOBILE OVERLAY === */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 998;
+            backdrop-filter: blur(3px);
+        }
+
+        /* === SIDEBAR (NAVIGATION) === */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            z-index: 999;
+        }
+        
+        .sidebar-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .brand-logo { font-size: 1.8rem; font-weight: 800; color: var(--text-light); letter-spacing: 1px; }
+        .brand-logo span { color: var(--primary-color); font-style: italic; }
+        .partner-tag { font-size: 0.75rem; color: var(--primary-color); text-transform: uppercase; letter-spacing: 2px; display: block; margin-top: -5px; }
+        
+        .close-sidebar { display: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; }
+
+        .nav-menu { flex: 1; padding: 20px 0; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        .nav-item {
+            padding: 15px 25px; display: flex; align-items: center; gap: 15px;
+            color: var(--text-muted); cursor: pointer; transition: var(--transition);
+            font-size: 0.95rem; border-left: 3px solid transparent;
+            text-decoration: none; width: 100%;
+        }
+        .nav-item:hover, .nav-item.active {
+            color: var(--primary-color); background: rgba(226, 135, 67, 0.05); border-left-color: var(--primary-color);
+        }
+        .nav-item i { font-size: 1.2rem; width: 25px; text-align: center; }
+
+        /* === MAIN CONTENT === */
+        .main-content {
+            flex: 1; display: flex; flex-direction: column; 
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--section-bg) 100%);
+            overflow-y: auto; 
+            overflow-x: hidden;
+        }
+
+        /* === TOP HEADER === */
+        .top-header {
+            background: rgba(5, 5, 5, 0.85); backdrop-filter: blur(10px);
+            padding: 20px 30px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05); position: sticky; top: 0; z-index: 100;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .menu-toggle { display: none; font-size: 1.5rem; color: var(--text-light); cursor: pointer; }
+        
+        .header-left h2 { font-size: 1.5rem; font-family: 'Poppins', sans-serif; font-weight: 600; }
+        .header-left p { font-size: 0.85rem; color: var(--text-muted); }
+
+        .header-right { display: flex; align-items: center; gap: 25px; }
+        
+        .status-toggle { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 500; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(22px); }
+        
+        .notification { position: relative; cursor: pointer; color: var(--text-muted); transition: 0.3s; font-size: 1.2rem; }
+        .notification:hover { color: var(--text-light); }
+        .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 0.6rem; font-weight: bold; width: 15px; height: 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        
+        .profile { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .profile img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); }
+        .profile-name { font-size: 0.9rem; font-weight: 500; }
+
+        /* === LIVE ORDERS KANBAN BOARD === */
+        .live-container { padding: 30px; flex: 1; display: flex; flex-direction: column; }
+        
+        .live-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .live-header h3 { font-size: 1.4rem; font-family: 'Poppins', sans-serif; font-weight: 600; }
+        
+        .sound-btn { background: rgba(226, 135, 67, 0.1); border: 1px solid rgba(226, 135, 67, 0.2); color: var(--primary-color); padding: 8px 15px; border-radius: 4px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; transition: 0.3s; }
+        .sound-btn:hover { background: rgba(226, 135, 67, 0.2); }
+        
+        .kanban-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: start; height: 100%; }
+        
+        .kanban-column { background: var(--sidebar-bg); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.03); max-height: calc(100vh - 200px); overflow-y: auto; }
+        
+        .column-title { font-size: 1rem; font-weight: 600; font-family: 'Poppins', sans-serif; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1); }
+        .column-count { background: rgba(255,255,255,0.05); font-size: 0.8rem; padding: 2px 10px; border-radius: 20px; color: var(--text-muted); }
+        
+        /* Order Card Styling */
+        .order-card { background: var(--card-bg); border-radius: 10px; padding: 20px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: var(--transition); width: 100%; }
+        .order-card:hover { border-color: rgba(226, 135, 67, 0.3); transform: translateY(-2px); }
+        
+        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .order-id { font-size: 1rem; font-weight: 700; color: #fff; }
+        .order-time { font-size: 0.8rem; color: var(--text-muted); }
+        
+        .customer-info { font-size: 0.85rem; color: var(--secondary-color); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        
+        .item-details { font-size: 0.9rem; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); padding: 12px 0; margin-bottom: 15px; }
+        .item-row { display: flex; justify-content: space-between; }
+        .item-qty { color: var(--primary-color); font-weight: 600; }
+        
+        .card-bottom { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .total-label { font-size: 0.85rem; color: var(--text-muted); }
+        .total-price { font-size: 1.1rem; font-weight: 600; color: #fff; }
+        
+        .action-container { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .btn-accept { background: var(--primary-color); color: #fff; }
+        .btn-accept:hover { background: #c97130; }
+        
+        .btn-reject { background: rgba(255, 71, 87, 0.1); color: var(--danger); border: 1px solid rgba(255, 71, 87, 0.2); }
+        .btn-reject:hover { background: var(--danger); color: #fff; }
+        
+        .btn-ready { background: var(--success); color: #fff; }
+        .btn-ready:hover { background: #22b85d; }
+        
+        .btn-dispatch { background: var(--info); color: #fff; }
+        .btn-dispatch:hover { background: #00b2b3; }
+
+        /* === MEDIA QUERIES (MOBILE FIXES) === */
+        @media (max-width: 991px) {
+            .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; }
+            .sidebar.show { left: 0; }
+            .mobile-overlay.show { display: block; }
+            .menu-toggle { display: block; }
+            .close-sidebar { display: block; }
+            
+            .top-header { padding: 15px 20px; }
+            .live-container { padding: 20px; }
+            
+            #restStatusText { display: none; }
+            
+            .kanban-board { 
+                display: flex; 
+                flex-direction: column; 
+                gap: 20px; 
+                height: auto; 
+                align-items: stretch; /* YAHI FIX THA: Isse cards pura width lenge */
+                width: 100%;
+            }
+            .kanban-column { 
+                max-height: none; 
+                overflow: visible; 
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-left h2 { font-size: 1.2rem; }
+            .header-left p, .profile-name { display: none; }
+            .header-right { gap: 15px; }
+            
+            .live-container { padding: 15px; }
+            
+            .kanban-column {
+                padding: 0; /* Extra dabba hatane ke liye */
+                background: transparent;
+                border: none;
+            }
+            
+            .column-title { 
+                padding: 0 5px 10px 5px; 
+            }
+            
+            .order-card { 
+                padding: 20px;
+                width: 100%; /* Ensure card takes full width */
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div>
+                <a href="#" class="brand-logo">Home<span>Bite</span>.</a>
+                <span class="partner-tag">Restaurant Portal</span>
+            </div>
+            <i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i>
+        </div>
+        
+        <ul class="nav-menu">
+            <li><a href="restaurant-dashboard.html" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
+            <li><a href="live-orders.html" class="nav-item active"><i class="fas fa-bell"></i> Live Orders</a></li>
+            <li><a href="menu.html" class="nav-item"><i class="fas fa-utensils"></i> Menu Management</a></li>
+            <li><a href="messages.html" class="nav-item"><i class="fas fa-envelope"></i> Messages <span style="background: var(--primary-color); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: auto;">New</span></a></li>
+            <li><a href="history.html" class="nav-item"><i class="fas fa-history"></i> Order History</a></li>
+            <li><a href="finances.html" class="nav-item"><i class="fas fa-wallet"></i> Finances</a></li>
+            <li><a href="settings.html" class="nav-item"><i class="fas fa-cog"></i> Settings</a></li>
+            <li style="margin-top: auto;"><a href="logout.html" class="nav-item" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        
+        <header class="top-header">
+            <div class="header-left">
+                <i class="fas fa-bars menu-toggle" onclick="toggleSidebar()"></i>
+                <div>
+                    <h2>Live Kitchen Display 🍳</h2>
+                    <p>Real-time order tracking and management.</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-toggle">
+                    <span id="restStatusText">Accepting Orders</span>
+                    <label class="switch">
+                        <input type="checkbox" id="restStatusToggle" checked onchange="toggleRestaurantStatus()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="notification">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">2</span>
+                </div>
+                <div class="profile">
+                    <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80" alt="Logo">
+                    <span class="profile-name">Spice & Grill</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="live-container">
+            <div class="live-header">
+                <h3>Live Tracker</h3>
+                <button class="sound-btn"><i class="fas fa-volume-up"></i> Sound Alert On</button>
+            </div>
+            
+            <div class="kanban-board">
+                
+                <div class="kanban-column">
+                    <div class="column-title">
+                        <span>🟢 NEW ORDERS</span>
+                        <span class="column-count">2</span>
+                    </div>
+                    
+                    <div class="order-card">
+                        <div class="card-top">
+                            <span class="order-id">#HB-4095</span>
+                            <span class="order-time">Just Now</span>
+                        </div>
+                        <div class="customer-info">
+                            <i class="fas fa-user"></i> Rahul Kumar
+                        </div>
+                        <div class="item-details">
+                            <div class="item-row">
+                                <span><span class="item-qty">1x</span> Chicken Biryani</span>
+                            </div>
+                            <div class="item-row">
+                                <span><span class="item-qty">2x</span> Garlic Naan</span>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <span class="total-label">Total Amount:</span>
+                            <span class="total-price">₹450</span>
+                        </div>
+                        <div class="action-container">
+                            <button class="btn btn-accept">Accept</button>
+                            <button class="btn btn-reject">Reject</button>
+                        </div>
+                    </div>
+
+                    <div class="order-card">
+                        <div class="card-top">
+                            <span class="order-id">#HB-4094</span>
+                            <span class="order-time">4 mins ago</span>
+                        </div>
+                        <div class="customer-info">
+                            <i class="fas fa-user"></i> Priya Singh
+                        </div>
+                        <div class="item-details">
+                            <div class="item-row">
+                                <span><span class="item-qty">2x</span> Truffle Pasta</span>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <span class="total-label">Total Amount:</span>
+                            <span class="total-price">₹1,700</span>
+                        </div>
+                        <div class="action-container">
+                            <button class="btn btn-accept">Accept</button>
+                            <button class="btn btn-reject">Reject</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kanban-column">
+                    <div class="column-title">
+                        <span>🔥 PREPARING</span>
+                        <span class="column-count">1</span>
+                    </div>
+                    
+                    <div class="order-card" style="border-left: 3px solid var(--primary-color);">
+                        <div class="card-top">
+                            <span class="order-id">#HB-4091</span>
+                            <span class="order-time" style="color: var(--secondary-color);"><i class="fas fa-clock"></i> 12 mins left</span>
+                        </div>
+                        <div class="customer-info">
+                            <i class="fas fa-user"></i> Amit Sharma
+                        </div>
+                        <div class="item-details">
+                            <div class="item-row">
+                                <span><span class="item-qty">1x</span> Grilled Atlantic Salmon</span>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <span class="total-label">Total Amount:</span>
+                            <span class="total-price">₹1,100</span>
+                        </div>
+                        <div class="action-container">
+                            <button class="btn btn-ready">Mark Food Ready</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kanban-column">
+                    <div class="column-title">
+                        <span>🛍️ READY FOR PICKUP</span>
+                        <span class="column-count">1</span>
+                    </div>
+
+                    <div class="order-card" style="border-left: 3px solid var(--success);">
+                        <div class="card-top">
+                            <span class="order-id">#HB-4089</span>
+                            <span class="order-time" style="color: var(--success);">Waiting for Rider</span>
+                        </div>
+                        <div class="customer-info">
+                            <i class="fas fa-user"></i> Neha Gupta
+                        </div>
+                        <div class="item-details">
+                            <div class="item-row">
+                                <span><span class="item-qty">1x</span> Paneer Tikka</span>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <span class="total-label">Total Amount:</span>
+                            <span class="total-price">₹350</span>
+                        </div>
+                        <div class="action-container">
+                            <button class="btn btn-dispatch">Handover to Rider</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Mobile Sidebar Toggle Logic
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
+        // Open/Close Restaurant Toggle Status Logic
+        function toggleRestaurantStatus() {
+            const toggle = document.getElementById('restStatusToggle');
+            const statusText = document.getElementById('restStatusText');
+            
+            if(toggle.checked) {
+                statusText.innerText = "Accepting Orders";
+                statusText.style.color = "var(--text-light)";
+            } else {
+                statusText.innerText = "Restaurant Closed";
+                statusText.style.color = "var(--danger)";
+            }
+        }
+    </script>
+</body>
+</html>

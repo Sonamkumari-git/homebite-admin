@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeBite | Restaurant Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* === VARIABLES & RESET === */
+        :root {
+            --primary-color: #e28743; 
+            --secondary-color: #f4c150;
+            --dark-bg: #050505; 
+            --section-bg: #0a0a0a; 
+            --sidebar-bg: #020202;
+            --card-bg: #151515;
+            --text-light: #ffffff;
+            --text-muted: #a0a0a0;
+            --danger: #ff4757;
+            --success: #2ed573;
+            --info: #3498db;
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1, h2, h3, h4, .brand-logo { font-family: 'Playfair Display', serif; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        /* === MOBILE OVERLAY === */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 998;
+            backdrop-filter: blur(3px);
+        }
+
+        /* === SIDEBAR (NAVIGATION) === */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            z-index: 999;
+        }
+        
+        .sidebar-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .brand-logo { font-size: 1.8rem; font-weight: 800; color: var(--text-light); letter-spacing: 1px; }
+        .brand-logo span { color: var(--primary-color); font-style: italic; }
+        .partner-tag { font-size: 0.75rem; color: var(--primary-color); text-transform: uppercase; letter-spacing: 2px; display: block; margin-top: -5px; }
+        
+        .close-sidebar { display: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; }
+
+        .nav-menu { flex: 1; padding: 20px 0; overflow-y: auto; }
+        .nav-item {
+            padding: 15px 25px; display: flex; align-items: center; gap: 15px;
+            color: var(--text-muted); cursor: pointer; transition: var(--transition);
+            font-size: 0.95rem; border-left: 3px solid transparent;
+        }
+        .nav-item:hover, .nav-item.active {
+            color: var(--primary-color); background: rgba(226, 135, 67, 0.05); border-left-color: var(--primary-color);
+        }
+        .nav-item i { font-size: 1.2rem; width: 25px; text-align: center; }
+
+        /* === MAIN CONTENT === */
+        .main-content {
+            flex: 1; display: flex; flex-direction: column; overflow-y: auto;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--section-bg) 100%);
+        }
+
+        /* === TOP HEADER === */
+        .top-header {
+            background: rgba(5, 5, 5, 0.85); backdrop-filter: blur(10px);
+            padding: 20px 30px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05); position: sticky; top: 0; z-index: 100;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .menu-toggle { display: none; font-size: 1.5rem; color: var(--text-light); cursor: pointer; }
+        
+        .header-left h2 { font-size: 1.5rem; font-family: 'Poppins', sans-serif; font-weight: 600; }
+        .header-left p { font-size: 0.85rem; color: var(--text-muted); }
+
+        .header-right { display: flex; align-items: center; gap: 25px; }
+        
+        .status-toggle { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 500; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(22px); }
+        
+        .notification { position: relative; cursor: pointer; color: var(--text-muted); transition: 0.3s; font-size: 1.2rem; }
+        .notification:hover { color: var(--text-light); }
+        .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 0.6rem; font-weight: bold; width: 15px; height: 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        
+        .profile { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .profile img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); }
+        .profile-name { font-size: 0.9rem; font-weight: 500; }
+
+        /* === DASHBOARD CONTENT === */
+        .page-section { padding: 30px; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card {
+            background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03);
+            display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); transition: var(--transition);
+        }
+        .stat-card:hover { transform: translateY(-5px); border-color: rgba(226, 135, 67, 0.3); }
+        .stat-icon { width: 60px; height: 60px; border-radius: 12px; background: rgba(226, 135, 67, 0.1); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
+        .stat-info h3 { font-size: 1.8rem; margin: 0; font-family: 'Poppins', sans-serif; }
+        .stat-info p { color: var(--text-muted); font-size: 0.9rem; margin: 0; }
+
+        /* === RESPONSIVE TABLE === */
+        .table-wrapper { background: var(--card-bg); border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); overflow: hidden; margin-bottom: 30px; }
+        .table-header { padding: 20px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .table-header h3 { font-size: 1.2rem; font-family: 'Poppins', sans-serif; }
+        
+        .table-responsive { overflow-x: auto; padding: 0 25px 25px 25px; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; /* Forces scroll on mobile */ }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        th { color: var(--text-muted); font-weight: 500; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; padding-top: 20px; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+        
+        .status { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
+        .status.pending { background: rgba(244, 193, 80, 0.1); color: var(--secondary-color); border: 1px solid rgba(244, 193, 80, 0.2); }
+        .status.preparing { background: rgba(226, 135, 67, 0.1); color: var(--primary-color); border: 1px solid rgba(226, 135, 67, 0.2); }
+        .status.completed { background: rgba(46, 213, 115, 0.1); color: var(--success); border: 1px solid rgba(46, 213, 115, 0.2); }
+
+        .btn-action { padding: 8px 15px; border-radius: 4px; border: none; font-size: 0.8rem; cursor: pointer; transition: 0.3s; font-weight: 500; white-space: nowrap; }
+        .btn-accept { background: var(--primary-color); color: #fff; }
+        .btn-accept:hover { background: #c97130; }
+        .btn-reject { background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); margin-left: 5px; }
+        .btn-reject:hover { background: rgba(255,71,87,0.1); color: var(--danger); border-color: var(--danger); }
+        
+        /* Message Specific buttons */
+        .btn-reply { background: rgba(52, 152, 219, 0.1); color: var(--info); border: 1px solid rgba(52, 152, 219, 0.3); }
+        .btn-reply:hover { background: var(--info); color: #fff; }
+        .btn-resolve { background: rgba(46, 213, 115, 0.1); color: var(--success); border: 1px solid rgba(46, 213, 115, 0.3); margin-left: 5px; }
+        .btn-resolve:hover { background: var(--success); color: #fff; }
+
+        /* === MEDIA QUERIES (RESPONSIVENESS) === */
+        @media (max-width: 991px) {
+            .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; }
+            .sidebar.show { left: 0; }
+            .mobile-overlay.show { display: block; }
+            .menu-toggle { display: block; }
+            .close-sidebar { display: block; }
+            
+            .top-header { padding: 15px 20px; }
+            .page-section { padding: 20px; }
+            
+            #restStatusText { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            .header-left h2 { font-size: 1.2rem; }
+            .header-left p { display: none; } 
+            .profile-name { display: none; } 
+            
+            .stats-grid { grid-template-columns: 1fr; }
+            .stat-card { padding: 20px; }
+            .stat-icon { width: 50px; height: 50px; font-size: 1.5rem; }
+            .stat-info h3 { font-size: 1.5rem; }
+            
+            .table-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div>
+                <a href="#" class="brand-logo">Home<span>Bite</span>.</a>
+                <span class="partner-tag">Restaurant Portal</span>
+            </div>
+            <i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active"><i class="fas fa-chart-pie"></i> Dashboard</li>
+            <li class="nav-item"><i class="fas fa-bell"></i> Live Orders</li>
+            <li class="nav-item"><i class="fas fa-utensils"></i> Menu Management</li>
+            <li class="nav-item"><i class="fas fa-envelope"></i> Messages <span style="background: var(--primary-color); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: auto;">New</span></li>
+            <li class="nav-item"><i class="fas fa-history"></i> Order History</li>
+            <li class="nav-item"><i class="fas fa-wallet"></i> Finances</li>
+            <li class="nav-item"><i class="fas fa-cog"></i> Settings</li>
+            <li class="nav-item" style="margin-top: auto; color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        
+        <header class="top-header">
+            <div class="header-left">
+                <i class="fas fa-bars menu-toggle" onclick="toggleSidebar()"></i>
+                <div>
+                    <h2>Welcome, Spice & Grill! 👋</h2>
+                    <p>Here's what's happening at your restaurant today.</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-toggle">
+                    <span id="restStatusText">Accepting Orders</span>
+                    <label class="switch">
+                        <input type="checkbox" id="restStatusToggle" checked onchange="toggleRestaurantStatus()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="notification">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">4</span>
+                </div>
+                <div class="profile">
+                    <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80" alt="Logo">
+                    <span class="profile-name">Spice & Grill</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="page-section">
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
+                    <div class="stat-info">
+                        <p>Today's Revenue</p>
+                        <h3>₹12,450</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
+                    <div class="stat-info">
+                        <p>Total Orders</p>
+                        <h3>48</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-star"></i></div>
+                    <div class="stat-info">
+                        <p>Average Rating</p>
+                        <h3>4.8 <span style="font-size:1rem; color:var(--text-muted)">/ 5</span></h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <div class="table-header">
+                    <h3>Recent Orders</h3>
+                    <button class="btn-action btn-accept">View All Live Orders</button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#HB-4091</td>
+                                <td>Rahul Kumar</td>
+                                <td>1x Chicken Biryani, 2x Naan</td>
+                                <td>₹450</td>
+                                <td><span class="status pending">New Order</span></td>
+                                <td>
+                                    <button class="btn-action btn-accept">Accept</button>
+                                    <button class="btn-action btn-reject">Reject</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#HB-4090</td>
+                                <td>Priya Singh</td>
+                                <td>2x Truffle Pasta</td>
+                                <td>₹1700</td>
+                                <td><span class="status preparing">Preparing</span></td>
+                                <td><button class="btn-action btn-accept" style="background:#2ed573;">Mark Ready</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <div class="table-header">
+                    <h3>Customer Messages & Queries</h3>
+                    <button class="btn-action btn-reject">View All Messages</button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Subject</th>
+                                <th>Message</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="color: var(--text-muted);">Jul 4, 2026</td>
+                                <td style="font-weight: 600; color: #fff;">gadha prasad</td>
+                                <td style="color: var(--primary-color);">bt23ma008@nitmz.ac.in</td>
+                                <td>khana khana hai yaar</td>
+                                <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">JLDI DO</td>
+                                <td>
+                                    <a href="mailto:bt23ma008@nitmz.ac.in"><button class="btn-action btn-reply"><i class="fas fa-reply"></i> Reply</button></a>
+                                    <button class="btn-action btn-resolve"><i class="fas fa-check"></i> Resolve</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="color: var(--text-muted);">Jul 3, 2026</td>
+                                <td style="font-weight: 600; color: #fff;">Simran Kaur</td>
+                                <td style="color: var(--primary-color);">simran.k@example.com</td>
+                                <td>Missing item in order #HB-4012</td>
+                                <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Hi, I ordered a meal combo but the drink was missing.</td>
+                                <td>
+                                    <a href="mailto:simran.k@example.com"><button class="btn-action btn-reply"><i class="fas fa-reply"></i> Reply</button></a>
+                                    <button class="btn-action btn-resolve"><i class="fas fa-check"></i> Resolve</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        // 1. Mobile Sidebar Toggle Logic
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
+        // 2. Open/Close Restaurant Toggle Status Logic
+        function toggleRestaurantStatus() {
+            const toggle = document.getElementById('restStatusToggle');
+            const statusText = document.getElementById('restStatusText');
+            
+            if(toggle.checked) {
+                statusText.innerText = "Accepting Orders";
+                statusText.style.color = "var(--text-light)";
+            } else {
+                statusText.innerText = "Restaurant Closed";
+                statusText.style.color = "var(--danger)";
+            }
+        }
+    </script>
+</body>
+</html>

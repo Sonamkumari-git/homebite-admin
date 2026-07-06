@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeBite | Menu Management</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* === VARIABLES & RESET === */
+        :root {
+            --primary-color: #e28743; 
+            --secondary-color: #f4c150;
+            --dark-bg: #050505; 
+            --section-bg: #0a0a0a; 
+            --sidebar-bg: #020202;
+            --card-bg: #151515;
+            --text-light: #ffffff;
+            --text-muted: #a0a0a0;
+            --danger: #ff4757;
+            --success: #2ed573;
+            --info: #00d2d3;
+            --transition: all 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1, h2, h3, h4, .brand-logo { font-family: 'Playfair Display', serif; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        /* === MOBILE OVERLAY === */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 998;
+            backdrop-filter: blur(3px);
+        }
+
+        /* === SIDEBAR (NAVIGATION) === */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            z-index: 999;
+        }
+        
+        .sidebar-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .brand-logo { font-size: 1.8rem; font-weight: 800; color: var(--text-light); letter-spacing: 1px; }
+        .brand-logo span { color: var(--primary-color); font-style: italic; }
+        .partner-tag { font-size: 0.75rem; color: var(--primary-color); text-transform: uppercase; letter-spacing: 2px; display: block; margin-top: -5px; }
+        
+        .close-sidebar { display: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; }
+
+        .nav-menu { flex: 1; padding: 20px 0; overflow-y: auto; display: flex; flex-direction: column; }
+        
+        .nav-item {
+            padding: 15px 25px; display: flex; align-items: center; gap: 15px;
+            color: var(--text-muted); cursor: pointer; transition: var(--transition);
+            font-size: 0.95rem; border-left: 3px solid transparent;
+            text-decoration: none; width: 100%;
+        }
+        .nav-item:hover, .nav-item.active {
+            color: var(--primary-color); background: rgba(226, 135, 67, 0.05); border-left-color: var(--primary-color);
+        }
+        .nav-item i { font-size: 1.2rem; width: 25px; text-align: center; }
+
+        /* === MAIN CONTENT === */
+        .main-content {
+            flex: 1; display: flex; flex-direction: column; 
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--section-bg) 100%);
+            overflow-y: auto; 
+            overflow-x: hidden;
+        }
+
+        /* === TOP HEADER === */
+        .top-header {
+            background: rgba(5, 5, 5, 0.85); backdrop-filter: blur(10px);
+            padding: 20px 30px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05); position: sticky; top: 0; z-index: 100;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .menu-toggle { display: none; font-size: 1.5rem; color: var(--text-light); cursor: pointer; }
+        
+        .header-left h2 { font-size: 1.5rem; font-family: 'Poppins', sans-serif; font-weight: 600; }
+        .header-left p { font-size: 0.85rem; color: var(--text-muted); }
+
+        .header-right { display: flex; align-items: center; gap: 25px; }
+        
+        .status-toggle { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 500; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(22px); }
+        
+        .notification { position: relative; cursor: pointer; color: var(--text-muted); transition: 0.3s; font-size: 1.2rem; }
+        .notification:hover { color: var(--text-light); }
+        .badge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 0.6rem; font-weight: bold; width: 15px; height: 15px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        
+        .profile { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .profile img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); }
+        .profile-name { font-size: 0.9rem; font-weight: 500; }
+
+        /* === MENU CONTAINER === */
+        .menu-container { padding: 30px; flex: 1; display: flex; flex-direction: column; }
+        
+        .menu-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; }
+        .menu-header h3 { font-size: 1.4rem; font-family: 'Poppins', sans-serif; font-weight: 600; }
+        
+        .add-btn { background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 600; transition: 0.3s; }
+        .add-btn:hover { background: #c97130; }
+
+        /* Dynamic Category Section */
+        .category-section { margin-bottom: 35px; }
+        .category-title { font-size: 1.2rem; font-weight: 700; color: var(--secondary-color); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 8px;}
+        
+        /* Grid Layout for Cards */
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        
+        /* Menu Card Design */
+        .menu-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 8px 25px rgba(0,0,0,0.4); transition: var(--transition); display: flex; flex-direction: column; }
+        .menu-card:hover { transform: translateY(-3px); border-color: rgba(226, 135, 67, 0.3); }
+        
+        .card-img-container { position: relative; height: 180px; width: 100%; background: #222; }
+        .card-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .veg-tag { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+        .veg-tag.veg i { color: var(--success); }
+        .veg-tag.non-veg i { color: var(--danger); }
+
+        .card-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+        .item-info { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .item-name { font-size: 1.15rem; font-weight: 600; color: #fff; }
+        
+        .item-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 15px; }
+        
+        .price-row { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .price-label { font-size: 0.8rem; color: var(--text-muted); }
+        .price-val { font-size: 1.2rem; font-weight: 700; color: var(--secondary-color); }
+        .multi-price { font-size: 0.9rem; color: #fff; line-height: 1.4; text-align: right; }
+        .multi-price span { color: var(--secondary-color); font-weight: 600; }
+
+        .card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); gap: 15px; }
+        .stock-control { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-muted); }
+        
+        .action-icons { display: flex; gap: 10px; }
+        .icon-btn { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); width: 35px; height: 35px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; color: var(--text-muted); }
+        .icon-btn.edit:hover { background: rgba(244, 193, 80, 0.1); color: var(--secondary-color); border-color: var(--secondary-color); }
+        .icon-btn.delete:hover { background: rgba(255, 71, 87, 0.1); color: var(--danger); border-color: var(--danger); }
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+        .empty-state i { font-size: 3.5rem; margin-bottom: 15px; color: rgba(226, 135, 67, 0.3); }
+
+        /* === MODAL STYLING === */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(5px); }
+        .modal-content { background: #111; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 500px; border-radius: 12px; overflow: hidden; animation: slideDown 0.3s ease; max-height: 90vh; overflow-y: auto; }
+        @keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .modal-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h4 { font-size: 1.2rem; font-weight: 600; color: #fff; font-family: 'Poppins', sans-serif; }
+        .close-modal { font-size: 1.2rem; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+        .close-modal:hover { color: #fff; }
+        
+        .modal-body { padding: 20px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
+        .form-control { width: 100%; background: #1c1c1c; border: 1px solid rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 6px; color: #fff; font-family: inherit; font-size: 0.9rem; transition: 0.3s; }
+        .form-control:focus { outline: none; border-color: var(--primary-color); }
+        
+        .row-flex { display: flex; gap: 15px; }
+        .row-flex .form-group { flex: 1; }
+
+        .radio-group { display: flex; gap: 20px; margin-top: 5px; }
+        .radio-label { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #fff; cursor: pointer; }
+        
+        .image-preview-box { width: 100%; height: 120px; background: #1c1c1c; border: 1px dashed rgba(255,255,255,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-top: 8px; overflow: hidden; position: relative; }
+        .image-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+        .image-preview-box span { font-size: 0.8rem; color: var(--text-muted); }
+
+        .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+        .btn-cancel { background: rgba(255,255,255,0.05); color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+        .btn-submit { background: var(--primary-color); color: #fff; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+
+        /* === MEDIA QUERIES === */
+        @media (max-width: 991px) {
+            .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; }
+            .sidebar.show { left: 0; }
+            .mobile-overlay.show { display: block; }
+            .menu-toggle { display: block; }
+            .close-sidebar { display: block; }
+            .top-header { padding: 15px 20px; }
+            .menu-container { padding: 20px 15px; }
+            .menu-grid { grid-template-columns: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div>
+                <a href="#" class="brand-logo">Home<span>Bite</span>.</a>
+                <span class="partner-tag">Restaurant Portal</span>
+            </div>
+            <i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i>
+        </div>
+        
+        <ul class="nav-menu">
+            <li><a href="restaurant-dashboard.html" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
+            <li><a href="live-orders.html" class="nav-item"><i class="fas fa-bell"></i> Live Orders</a></li>
+            <li><a href="menu.html" class="nav-item active"><i class="fas fa-utensils"></i> Menu Management</a></li>
+            <li><a href="messages.html" class="nav-item"><i class="fas fa-envelope"></i> Messages <span style="background: var(--primary-color); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: auto;">New</span></a></li>
+            <li><a href="history.html" class="nav-item"><i class="fas fa-history"></i> Order History</a></li>
+            <li><a href="finances.html" class="nav-item"><i class="fas fa-wallet"></i> Finances</a></li>
+            <li><a href="settings.html" class="nav-item"><i class="fas fa-cog"></i> Settings</a></li>
+            <li style="margin-top: auto;"><a href="logout.html" class="nav-item" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        
+        <header class="top-header">
+            <div class="header-left">
+                <i class="fas fa-bars menu-toggle" onclick="toggleSidebar()"></i>
+                <div>
+                    <h2>Menu Management 🍔</h2>
+                    <p>Manage your food items, prices, and stock instantly.</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-toggle">
+                    <span id="restStatusText">Accepting Orders</span>
+                    <label class="switch">
+                        <input type="checkbox" id="restStatusToggle" checked onchange="toggleRestaurantStatus()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="notification">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">2</span>
+                </div>
+                <div class="profile">
+                    <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80" alt="Logo">
+                    <span class="profile-name">Spice & Grill</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="menu-container">
+            <div class="menu-header">
+                <h3>Food Menu</h3>
+                <button class="add-btn" onclick="openModal('add')"><i class="fas fa-plus"></i> Add New Item</button>
+            </div>
+            
+            <div id="liveMenuWrapper">
+                </div>
+        </section>
+    </main>
+
+    <div class="modal" id="itemModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 id="modalTitle">Add New Food Item</h4>
+                <i class="fas fa-times close-modal" onclick="closeModal()"></i>
+            </div>
+            <div class="modal-body">
+                <form id="itemForm" onsubmit="handleFormSubmit(event)">
+                    <input type="hidden" id="editItemId">
+                    
+                    <div class="form-group">
+                        <label>Item Name *</label>
+                        <input type="text" id="itemName" class="form-control" placeholder="e.g., Special Kaju Katli, Butter Chicken" required>
+                    </div>
+
+                    <div class="row-flex">
+                        <div class="form-group">
+                            <label>Category *</label>
+                            <select id="itemCategory" class="form-control" onchange="checkCustomCategory(this.value)" required>
+                                <option value="Sweets">Sweets 🍰</option>
+                                <option value="Starters">Starters 🍢</option>
+                                <option value="Main Course">Main Course 🍛</option>
+                                <option value="Desserts">Desserts 🍦</option>
+                                <option value="CUSTOM">+ Create New Category</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="customCategoryGroup" style="display: none;">
+                            <label>New Category Name *</label>
+                            <input type="text" id="customCategoryName" class="form-control" placeholder="e.g., Beverages">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Food Type *</label>
+                        <div class="radio-group">
+                            <label class="radio-label"><input type="radio" name="foodType" value="Veg" checked> Veg 🌱</label>
+                            <label class="radio-label"><input type="radio" name="foodType" value="Non-Veg"> Non-Veg 🍖</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="itemDesc" class="form-control" rows="2" placeholder="Briefly describe the item..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Price Model *</label>
+                        <div class="radio-group" style="margin-bottom: 12px;">
+                            <label class="radio-label"><input type="radio" name="priceModel" value="single" checked onchange="togglePriceFields('single')"> Single Price</label>
+                            <label class="radio-label"><input type="radio" name="priceModel" value="variants" onchange="togglePriceFields('variants')"> Half / Full Price</label>
+                        </div>
+
+                        <div id="singlePriceGroup">
+                            <input type="number" id="itemPrice" class="form-control" placeholder="Price (₹)">
+                        </div>
+
+                        <div id="variantPriceGroup" class="row-flex" style="display: none;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <input type="number" id="priceHalf" class="form-control" placeholder="Half Price (₹)">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <input type="number" id="priceFull" class="form-control" placeholder="Full Price (₹)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Upload Item Image *</label>
+                        <input type="file" id="itemImageFile" class="form-control" accept="image/*" onchange="previewImage(event)">
+                        <div class="image-preview-box" id="imgPreviewBox">
+                            <span>No Image Selected</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: center; gap: 15px;">
+                        <label style="margin-bottom: 0;">Stock Availability:</label>
+                        <label class="switch">
+                            <input type="checkbox" id="itemStockToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                        <button type="submit" class="btn-submit" id="submitBtn">Save Item</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Store (Real time live data with LocalStorage backup)
+        let menuData = JSON.parse(localStorage.getItem('homebite_menu')) || [];
+        let base64ImageString = "";
+
+        // Initial Load
+        window.onload = function() {
+            renderMenu();
+        };
+
+        // Render function to dynamically build categories & item cards
+        function renderMenu() {
+            const wrapper = document.getElementById('liveMenuWrapper');
+            wrapper.innerHTML = "";
+
+            if (menuData.length === 0) {
+                wrapper.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-utensils"></i>
+                        <p>Menu ekdum khali hai! "Add New Item" par click karke real item add karein.</p>
+                    </div>`;
+                return;
+            }
+
+            // Grouping data by Category
+            const categories = {};
+            menuData.forEach(item => {
+                if (!categories[item.category]) {
+                    categories[item.category] = [];
+                }
+                categories[item.category].push(item);
+            });
+
+            // Build HTML for each Category
+            for (let cat in categories) {
+                let catSection = document.createElement('div');
+                catSection.className = 'category-section';
+
+                let title = document.createElement('h3');
+                title.className = 'category-title';
+                title.innerHTML = `<i class="fas fa-chevron-right"></i> ${cat}`;
+                catSection.appendChild(title);
+
+                let grid = document.createElement('div');
+                grid.className = 'menu-grid';
+
+                categories[cat].forEach(item => {
+                    let card = document.createElement('div');
+                    card.className = 'menu-card';
+                    
+                    let priceHTML = "";
+                    if (item.priceModel === 'single') {
+                        priceHTML = `
+                            <span class="price-label">Price:</span>
+                            <span class="price-val">₹${item.price}</span>`;
+                    } else {
+                        priceHTML = `
+                            <div class="multi-price">
+                                Half: <span>₹${item.priceHalf}</span> | Full: <span>₹${item.priceFull}</span>
+                            </div>`;
+                    }
+
+                    let defaultImg = item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80';
+
+                    card.innerHTML = `
+                        <div class="card-img-container">
+                            <img src="${defaultImg}" alt="${item.name}">
+                            <span class="veg-tag ${item.foodType === 'Veg' ? 'veg' : 'non-veg'}">
+                                <i class="fas fa-circle"></i> ${item.foodType}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="item-info">
+                                <span class="item-name">${item.name}</span>
+                            </div>
+                            <p class="item-desc">${item.desc || 'No description provided.'}</p>
+                            
+                            <div class="price-row">
+                                ${priceHTML}
+                            </div>
+                            
+                            <div class="card-actions">
+                                <div class="stock-control">
+                                    <span>${item.inStock ? '🟢 In Stock' : '🔴 Out of Stock'}</span>
+                                    <label class="switch">
+                                        <input type="checkbox" ${item.inStock ? 'checked' : ''} onchange="toggleItemStock('${item.id}')">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="action-icons">
+                                    <button class="icon-btn edit" onclick="editItem('${item.id}')" title="Edit Item"><i class="fas fa-pen"></i></button>
+                                    <button class="icon-btn delete" onclick="deleteItem('${item.id}')" title="Delete Item"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                catSection.appendChild(grid);
+                wrapper.appendChild(catSection);
+            }
+        }
+
+        // Modal Open logic
+        function openModal(mode, id = null) {
+            const modal = document.getElementById('itemModal');
+            document.getElementById('itemForm').reset();
+            document.getElementById('imgPreviewBox').innerHTML = "<span>No Image Selected</span>";
+            document.getElementById('customCategoryGroup').style.display = 'none';
+            base64ImageString = "";
+            togglePriceFields('single');
+            
+            if (mode === 'add') {
+                document.getElementById('modalTitle').innerText = "Add New Food Item";
+                document.getElementById('editItemId').value = "";
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('itemModal').style.display = 'none';
+        }
+
+        // Handle category selection change
+        function checkCustomCategory(val) {
+            const customGroup = document.getElementById('customCategoryGroup');
+            if (val === 'CUSTOM') {
+                customGroup.style.display = 'block';
+                document.getElementById('customCategoryName').required = true;
+            } else {
+                customGroup.style.display = 'none';
+                document.getElementById('customCategoryName').required = false;
+            }
+        }
+
+        // Toggle Price Input fields based on Model selection
+        function togglePriceFields(type) {
+            const singleGroup = document.getElementById('singlePriceGroup');
+            const variantGroup = document.getElementById('variantPriceGroup');
+            
+            if (type === 'single') {
+                singleGroup.style.display = 'block';
+                variantGroup.style.display = 'none';
+                document.getElementById('itemPrice').required = true;
+                document.getElementById('priceHalf').required = false;
+                document.getElementById('priceFull').required = false;
+            } else {
+                singleGroup.style.display = 'none';
+                variantGroup.style.display = 'flex';
+                document.getElementById('itemPrice').required = false;
+                document.getElementById('priceHalf').required = true;
+                document.getElementById('priceFull').required = true;
+            }
+        }
+
+        // Image file reading logic
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    base64ImageString = e.target.result;
+                    document.getElementById('imgPreviewBox').innerHTML = `<img src="${base64ImageString}" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Create & Update Handler
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const editId = document.getElementById('editItemId').value;
+            const name = document.getElementById('itemName').value;
+            let category = document.getElementById('itemCategory').value;
+            if (category === 'CUSTOM') {
+                category = document.getElementById('customCategoryName').value;
+            }
+            
+            const foodType = document.querySelector('input[name="foodType"]:checked').value;
+            const desc = document.getElementById('itemDesc').value;
+            const priceModel = document.querySelector('input[name="priceModel"]:checked').value;
+            const price = document.getElementById('itemPrice').value;
+            const priceHalf = document.getElementById('priceHalf').value;
+            const priceFull = document.getElementById('priceFull').value;
+            const inStock = document.getElementById('itemStockToggle').checked;
+
+            if (editId) {
+                // Edit existing item logic
+                let itemIndex = menuData.findIndex(item => item.id === editId);
+                if (itemIndex > -1) {
+                    menuData[itemIndex].name = name;
+                    menuData[itemIndex].category = category;
+                    menuData[itemIndex].foodType = foodType;
+                    menuData[itemIndex].desc = desc;
+                    menuData[itemIndex].priceModel = priceModel;
+                    menuData[itemIndex].price = price;
+                    menuData[itemIndex].priceHalf = priceHalf;
+                    menuData[itemIndex].priceFull = priceFull;
+                    menuData[itemIndex].inStock = inStock;
+                    if(base64ImageString) {
+                        menuData[itemIndex].image = base64ImageString;
+                    }
+                }
+            } else {
+                // Add new item logic
+                const newItem = {
+                    id: 'item_' + Date.now(),
+                    name, category, foodType, desc, priceModel, price, priceHalf, priceFull, inStock,
+                    image: base64ImageString || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80'
+                };
+                menuData.push(newItem);
+            }
+
+            localStorage.setItem('homebite_menu', JSON.stringify(menuData));
+            closeModal();
+            renderMenu();
+        }
+
+        // Edit Button handler
+        function editItem(id) {
+            const item = menuData.find(i => i.id === id);
+            if (!item) return;
+
+            openModal('edit');
+            document.getElementById('modalTitle').innerText = "Edit Food Item";
+            document.getElementById('editItemId').value = item.id;
+            document.getElementById('itemName').value = item.name;
+            
+            // Manage Category selection populate
+            const selectCat = document.getElementById('itemCategory');
+            let isExistingOption = false;
+            for(let i=0; i<selectCat.options.length; i++) {
+                if(selectCat.options[i].value === item.category) {
+                    isExistingOption = true;
+                    break;
+                }
+            }
+
+            if(isExistingOption) {
+                selectCat.value = item.category;
+                document.getElementById('customCategoryGroup').style.display = 'none';
+            } else {
+                selectCat.value = 'CUSTOM';
+                document.getElementById('customCategoryGroup').style.display = 'block';
+                document.getElementById('customCategoryName').value = item.category;
+            }
+
+            // Populate other fields
+            document.querySelector(`input[name="foodType"][value="${item.foodType}"]`).checked = true;
+            document.getElementById('itemDesc').value = item.desc;
+            document.querySelector(`input[name="priceModel"][value="${item.priceModel}"]`).checked = true;
+            togglePriceFields(item.priceModel);
+            
+            if (item.priceModel === 'single') {
+                document.getElementById('itemPrice').value = item.price;
+            } else {
+                document.getElementById('priceHalf').value = item.priceHalf;
+                document.getElementById('priceFull').value = item.priceFull;
+            }
+
+            if(item.image) {
+                document.getElementById('imgPreviewBox').innerHTML = `<img src="${item.image}" alt="Preview">`;
+                base64ImageString = item.image;
+            }
+            document.getElementById('itemStockToggle').checked = item.inStock;
+        }
+
+        // Delete Button handler
+        function deleteItem(id) {
+            if (confirm("Kya aap sach me is item ko menu se delete karna chahte hain?")) {
+                menuData = menuData.filter(item => item.id !== id);
+                localStorage.setItem('homebite_menu', JSON.stringify(menuData));
+                renderMenu();
+            }
+        }
+
+        // Stock Toggle handler from Card directly
+        function toggleItemStock(id) {
+            let itemIndex = menuData.findIndex(item => item.id === id);
+            if (itemIndex > -1) {
+                menuData[itemIndex].inStock = !menuData[itemIndex].inStock;
+                localStorage.setItem('homebite_menu', JSON.stringify(menuData));
+                renderMenu();
+            }
+        }
+
+        // Universal Layout logic
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+            document.getElementById('mobileOverlay').classList.toggle('show');
+        }
+
+        function toggleRestaurantStatus() {
+            const toggle = document.getElementById('restStatusToggle');
+            const statusText = document.getElementById('restStatusText');
+            statusText.innerText = toggle.checked ? "Accepting Orders" : "Restaurant Closed";
+            statusText.style.color = toggle.checked ? "var(--text-light)" : "var(--danger)";
+        }
+    </script>
+</body>
+</html>
