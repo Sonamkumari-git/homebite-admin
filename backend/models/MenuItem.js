@@ -9,7 +9,7 @@ const MenuItemSchema = new mongoose.Schema({
     price: { type: Number },
     priceHalf: { type: Number },
     priceFull: { type: Number },
-    image: { type: String, required: true }, // Base64 image string save hoga
+    image: { type: String, required: true }, // Ab isme Cloudinary Image URL save hoga
     inStock: { type: Boolean, default: true }
 }, { timestamps: true });
 
