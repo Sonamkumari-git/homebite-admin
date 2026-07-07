@@ -294,115 +294,25 @@
                 <div class="kanban-column">
                     <div class="column-title">
                         <span>🟢 NEW ORDERS</span>
-                        <span class="column-count">2</span>
+                        <span class="column-count">0</span>
                     </div>
-                    
-                    <div class="order-card">
-                        <div class="card-top">
-                            <span class="order-id">#HB-4095</span>
-                            <span class="order-time">Just Now</span>
-                        </div>
-                        <div class="customer-info">
-                            <i class="fas fa-user"></i> Rahul Kumar
-                        </div>
-                        <div class="item-details">
-                            <div class="item-row">
-                                <span><span class="item-qty">1x</span> Chicken Biryani</span>
-                            </div>
-                            <div class="item-row">
-                                <span><span class="item-qty">2x</span> Garlic Naan</span>
-                            </div>
-                        </div>
-                        <div class="card-bottom">
-                            <span class="total-label">Total Amount:</span>
-                            <span class="total-price">₹450</span>
-                        </div>
-                        <div class="action-container">
-                            <button class="btn btn-accept">Accept</button>
-                            <button class="btn btn-reject">Reject</button>
-                        </div>
-                    </div>
-
-                    <div class="order-card">
-                        <div class="card-top">
-                            <span class="order-id">#HB-4094</span>
-                            <span class="order-time">4 mins ago</span>
-                        </div>
-                        <div class="customer-info">
-                            <i class="fas fa-user"></i> Priya Singh
-                        </div>
-                        <div class="item-details">
-                            <div class="item-row">
-                                <span><span class="item-qty">2x</span> Truffle Pasta</span>
-                            </div>
-                        </div>
-                        <div class="card-bottom">
-                            <span class="total-label">Total Amount:</span>
-                            <span class="total-price">₹1,700</span>
-                        </div>
-                        <div class="action-container">
-                            <button class="btn btn-accept">Accept</button>
-                            <button class="btn btn-reject">Reject</button>
-                        </div>
-                    </div>
+                    <div class="orders-list-container" id="new-orders-container"></div>
                 </div>
 
                 <div class="kanban-column">
                     <div class="column-title">
                         <span>🔥 PREPARING</span>
-                        <span class="column-count">1</span>
+                        <span class="column-count">0</span>
                     </div>
-                    
-                    <div class="order-card" style="border-left: 3px solid var(--primary-color);">
-                        <div class="card-top">
-                            <span class="order-id">#HB-4091</span>
-                            <span class="order-time" style="color: var(--secondary-color);"><i class="fas fa-clock"></i> 12 mins left</span>
-                        </div>
-                        <div class="customer-info">
-                            <i class="fas fa-user"></i> Amit Sharma
-                        </div>
-                        <div class="item-details">
-                            <div class="item-row">
-                                <span><span class="item-qty">1x</span> Grilled Atlantic Salmon</span>
-                            </div>
-                        </div>
-                        <div class="card-bottom">
-                            <span class="total-label">Total Amount:</span>
-                            <span class="total-price">₹1,100</span>
-                        </div>
-                        <div class="action-container">
-                            <button class="btn btn-ready">Mark Food Ready</button>
-                        </div>
-                    </div>
+                    <div class="orders-list-container" id="preparing-orders-container"></div>
                 </div>
 
                 <div class="kanban-column">
                     <div class="column-title">
                         <span>🛍️ READY FOR PICKUP</span>
-                        <span class="column-count">1</span>
+                        <span class="column-count">0</span>
                     </div>
-
-                    <div class="order-card" style="border-left: 3px solid var(--success);">
-                        <div class="card-top">
-                            <span class="order-id">#HB-4089</span>
-                            <span class="order-time" style="color: var(--success);">Waiting for Rider</span>
-                        </div>
-                        <div class="customer-info">
-                            <i class="fas fa-user"></i> Neha Gupta
-                        </div>
-                        <div class="item-details">
-                            <div class="item-row">
-                                <span><span class="item-qty">1x</span> Paneer Tikka</span>
-                            </div>
-                        </div>
-                        <div class="card-bottom">
-                            <span class="total-label">Total Amount:</span>
-                            <span class="total-price">₹350</span>
-                        </div>
-                        <div class="action-container">
-                            <button class="btn btn-dispatch">Handover to Rider</button>
-                        </div>
-                    </div>
+                    <div class="orders-list-container" id="ready-orders-container"></div>
                 </div>
 
             </div>
@@ -431,6 +341,201 @@
                 statusText.innerText = "Restaurant Closed";
                 statusText.style.color = "var(--danger)";
             }
+        }
+
+        // --- BACKEND API DYNAMIC INTEGRATION ENGINE ---
+        const BASE_URL = "https://homebite-aecl.onrender.com";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchLiveOrders();
+            // हर 15 सेकंड में लाइव ऑर्डर्स को ऑटोमैटिक रिफ्रेश करने के लिए
+            setInterval(fetchLiveOrders, 15000);
+        });
+
+        // ऑर्डर्स को सर्वर से फेच करने का फंक्शन
+        async function fetchLiveOrders() {
+            const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || "";
+            const headers = { "Content-Type": "application/json" };
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+
+            try {
+                // आपके द्वारा बताए गए '/my-orders' रूट से डेटा फेच करना
+                const response = await fetch(`${BASE_URL}/api/orders/my-orders`, {
+                    method: "GET",
+                    headers: headers
+                });
+
+                if (!response.ok) throw new Error("API Response Error");
+
+                const data = await response.json();
+                const orders = Array.isArray(data) ? data : (data.orders || []);
+
+                // सॉर्टिंग लॉजिक: नया हमेशा ऊपर रहेगा, पुराना बाद में (Newest on top)
+                orders.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
+
+                renderKanbanBoard(orders);
+            } catch (error) {
+                console.error("Error fetching live orders:", error);
+            }
+        }
+
+        // बोर्ड पर ऑर्डर्स रेंडर करने का फंक्शन
+        function renderKanbanBoard(orders) {
+            const newContainer = document.getElementById('new-orders-container');
+            const preparingContainer = document.getElementById('preparing-orders-container');
+            const readyContainer = document.getElementById('ready-orders-container');
+
+            // पुराने कार्ड्स क्लियर करना
+            newContainer.innerHTML = '';
+            preparingContainer.innerHTML = '';
+            readyContainer.innerHTML = '';
+
+            let countNew = 0;
+            let countPreparing = 0;
+            let countReady = 0;
+
+            orders.forEach(order => {
+                const status = (order.status || order.orderStatus || 'Placed').toLowerCase();
+                
+                // आइटम लिस्ट का HTML तैयार करना
+                let itemsHtml = '';
+                const items = order.orderItems || order.items || [];
+                items.forEach(item => {
+                    const qty = item.qty || item.quantity || 1;
+                    const name = item.name || (item.product ? item.product.name : 'Food Item');
+                    itemsHtml += `
+                        <div class="item-row">
+                            <span><span class="item-qty">${qty}x</span> ${name}</span>
+                        </div>
+                    `;
+                });
+
+                // ऑर्डर डिटेल्स पार्स करना
+                const orderIdDisplay = order.orderId || (order._id ? `#HB-${order._id.slice(-4).toUpperCase()}` : '#HB-0000');
+                const customerName = order.customerName || (order.user && order.user.name) || 'Guest Customer';
+                const totalAmount = order.totalPrice || order.totalAmount || 0;
+                const timeAgoText = formatTimeAgo(order.createdAt || order.date);
+
+                // 1. New Orders Column Mapping
+                if (status === 'placed' || status === 'new' || status === 'pending') {
+                    countNew++;
+                    newContainer.innerHTML += `
+                        <div class="order-card">
+                            <div class="card-top">
+                                <span class="order-id">${orderIdDisplay}</span>
+                                <span class="order-time">${timeAgoText}</span>
+                            </div>
+                            <div class="customer-info">
+                                <i class="fas fa-user"></i> ${customerName}
+                            </div>
+                            <div class="item-details">
+                                ${itemsHtml}
+                            </div>
+                            <div class="card-bottom">
+                                <span class="total-label">Total Amount:</span>
+                                <span class="total-price">₹${totalAmount}</span>
+                            </div>
+                            <div class="action-container">
+                                <button class="btn btn-accept" onclick="updateStatus('${order._id || order.id}', 'Preparing')">Accept</button>
+                                <button class="btn btn-reject" onclick="updateStatus('${order._id || order.id}', 'Rejected')">Reject</button>
+                            </div>
+                        </div>
+                    `;
+                } 
+                // 2. Preparing Column Mapping
+                else if (status === 'preparing' || status === 'processing' || status === 'cooking') {
+                    countPreparing++;
+                    preparingContainer.innerHTML += `
+                        <div class="order-card" style="border-left: 3px solid var(--primary-color);">
+                            <div class="card-top">
+                                <span class="order-id">${orderIdDisplay}</span>
+                                <span class="order-time" style="color: var(--secondary-color);"><i class="fas fa-clock"></i> In Kitchen</span>
+                            </div>
+                            <div class="customer-info">
+                                <i class="fas fa-user"></i> ${customerName}
+                            </div>
+                            <div class="item-details">
+                                ${itemsHtml}
+                            </div>
+                            <div class="card-bottom">
+                                <span class="total-label">Total Amount:</span>
+                                <span class="total-price">₹${totalAmount}</span>
+                            </div>
+                            <div class="action-container">
+                                <button class="btn btn-ready" onclick="updateStatus('${order._id || order.id}', 'Ready')">Mark Food Ready</button>
+                            </div>
+                        </div>
+                    `;
+                } 
+                // 3. Ready For Pickup Column Mapping
+                else if (status === 'ready' || status === 'ready for pickup') {
+                    countReady++;
+                    readyContainer.innerHTML += `
+                        <div class="order-card" style="border-left: 3px solid var(--success);">
+                            <div class="card-top">
+                                <span class="order-id">${orderIdDisplay}</span>
+                                <span class="order-time" style="color: var(--success);">Waiting for Rider</span>
+                            </div>
+                            <div class="customer-info">
+                                <i class="fas fa-user"></i> ${customerName}
+                            </div>
+                            <div class="item-details">
+                                ${itemsHtml}
+                            </div>
+                            <div class="card-bottom">
+                                <span class="total-label">Total Amount:</span>
+                                <span class="total-price">₹${totalAmount}</span>
+                            </div>
+                            <div class="action-container">
+                                <button class="btn btn-dispatch" onclick="updateStatus('${order._id || order.id}', 'Delivered')">Handover to Rider</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            // कॉलम काउंट्स अपडेट करना
+            const columns = document.querySelectorAll('.kanban-column');
+            if (columns.length >= 3) {
+                columns[0].querySelector('.column-count').innerText = countNew;
+                columns[1].querySelector('.column-count').innerText = countPreparing;
+                columns[2].querySelector('.column-count').innerText = countReady;
+            }
+        }
+
+        // ऑर्डर स्टेटस अपडेट करने का फंक्शन (Accept/Reject/Ready/Handover के लिए)
+        async function updateStatus(orderId, newStatus) {
+            const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || "";
+            try {
+                const response = await fetch(`${BASE_URL}/api/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ""
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (response.ok) {
+                    fetchLiveOrders(); // अपडेट के तुरंत बाद री-लोड़ करना
+                }
+            } catch (error) {
+                console.error('Error updating order status:', error);
+            }
+        }
+
+        // टाइम फॉर्मेटिंग हेल्पर (जैसे: Just Now, 5 mins ago)
+        function formatTimeAgo(dateString) {
+            if (!dateString) return "Just Now";
+            const now = new Date();
+            const past = new Date(dateString);
+            const diffMs = now - past;
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 1) return "Just Now";
+            if (diffMins < 60) return `${diffMins} mins ago`;
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `${diffHours} hours ago`;
+            return past.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
     </script>
 </body>
