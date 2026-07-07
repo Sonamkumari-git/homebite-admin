@@ -1,12 +1,8 @@
 const express = require('express');
 const router = express.Router();
-// Yahan apko getContacts controller bhi import karna padega jo DB se saare records laye
-const { submitContact, getContacts } = require('../controllers/contactController');
+const { getContacts } = require('../controllers/contactController');
 
-// User message bhejta hai:
-router.post('/', submitContact);
-
-// Admin / Dashboard messages dekhta hai:
-router.get('/', getContacts); 
+// Live GET Route for Admin Dashboard
+router.get('/contacts', getContacts);
 
 module.exports = router;
