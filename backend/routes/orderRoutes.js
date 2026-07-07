@@ -1,17 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { placeOrder, getMyOrders, verifyPayment, getAllOrdersForAdmin } = require('../controllers/orderController');
+const { getAllOrdersForAdmin, updateOrderStatus } = require('../controllers/orderController');
+const { protectAdmin } = require('../middleware/adminAuthMiddleware'); // Admin auth middleware
 
-const { protect } = require('../middleware/authMiddleware'); // Customer auth
-const { protectAdmin } = require('../middleware/adminAuthMiddleware'); // Admin auth naya middleware
+// === 🔥 ADMIN ROUTES ===
 
-// === CUSTOMER ROUTES ===
-router.post('/place', protect, placeOrder);
-router.post('/verify', protect, verifyPayment); 
-router.get('/my-orders', protect, getMyOrders);
-
-// === 🔥 ADMIN ROUTE (Jo live-orders.html call karega) ===
+// Saare live orders fetch karne ke liye (GET request)
 router.get('/all-orders', protectAdmin, getAllOrdersForAdmin);
+
+// Order ka status update karne ke liye (PUT request) -> Jo live-orders.html ka updateStatus() call karega
+router.put('/:id/status', protectAdmin, updateOrderStatus);
 
 // Router ko export kar rahe hain
 module.exports = router;
