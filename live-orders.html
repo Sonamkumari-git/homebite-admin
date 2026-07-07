@@ -319,7 +319,7 @@
         </section>
     </main>
 
-    <script>
+<script>
         // Mobile Sidebar Toggle Logic
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -348,19 +348,20 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchLiveOrders();
-            // हर 15 सेकंड में लाइव ऑर्डर्स को ऑटोमैटिक रिफ्रेश करने के लिए
+            // Har 15 second me live orders ko automatic refresh karne ke liye
             setInterval(fetchLiveOrders, 15000);
         });
 
-        // ऑर्डर्स को सर्वर से फेच करने का फंक्शन
+        // 🔥 FIX: Saare orders ko fetch karne ka sahi function
         async function fetchLiveOrders() {
-            const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || "";
+            // Admin token ko localStorage se check karna
+            const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || localStorage.getItem('adminToken') || "";
             const headers = { "Content-Type": "application/json" };
             if (token) headers["Authorization"] = `Bearer ${token}`;
 
             try {
-                // आपके द्वारा बताए गए '/my-orders' रूट से डेटा फेच करना
-                const response = await fetch(`${BASE_URL}/api/orders/my-orders`, {
+                // 👉 YAHAN BADLAAV KIYA HAI: 'my-orders' ki jagah 'all-orders' kiya hai
+                const response = await fetch(`${BASE_URL}/api/orders/all-orders`, {
                     method: "GET",
                     headers: headers
                 });
@@ -368,9 +369,11 @@
                 if (!response.ok) throw new Error("API Response Error");
 
                 const data = await response.json();
-                const orders = Array.isArray(data) ? data : (data.orders || []);
+                
+                // Agar backend direct array bhej raha hai ya filter karke object me orders bhej raha hai
+                const orders = Array.isArray(data) ? data : (data.orders || data.data || []);
 
-                // सॉर्टिंग लॉजिक: नया हमेशा ऊपर रहेगा, पुराना बाद में (Newest on top)
+                // Sorting: Naye orders hamesha sabse upar dikhenge
                 orders.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
 
                 renderKanbanBoard(orders);
@@ -379,13 +382,13 @@
             }
         }
 
-        // बोर्ड पर ऑर्डर्स रेंडर करने का फंक्शन
+        // Board par orders render karne ka function
         function renderKanbanBoard(orders) {
             const newContainer = document.getElementById('new-orders-container');
             const preparingContainer = document.getElementById('preparing-orders-container');
             const readyContainer = document.getElementById('ready-orders-container');
 
-            // पुराने कार्ड्स क्लियर करना
+            // Purane cards clear karna
             newContainer.innerHTML = '';
             preparingContainer.innerHTML = '';
             readyContainer.innerHTML = '';
@@ -395,9 +398,10 @@
             let countReady = 0;
 
             orders.forEach(order => {
+                // Status check (lowercase me convert karke matching easy ho jaati hai)
                 const status = (order.status || order.orderStatus || 'Placed').toLowerCase();
                 
-                // आइटम लिस्ट का HTML तैयार करना
+                // Item list ka HTML taiyar karna
                 let itemsHtml = '';
                 const items = order.orderItems || order.items || [];
                 items.forEach(item => {
@@ -410,13 +414,13 @@
                     `;
                 });
 
-                // ऑर्डर डिटेल्स पार्स करना
+                // Order details parse karna
                 const orderIdDisplay = order.orderId || (order._id ? `#HB-${order._id.slice(-4).toUpperCase()}` : '#HB-0000');
-                const customerName = order.customerName || (order.user && order.user.name) || 'Guest Customer';
+                const customerName = order.customerName || (order.user && order.user.name) || (order.shippingAddress && order.shippingAddress.name) || 'Customer';
                 const totalAmount = order.totalPrice || order.totalAmount || 0;
                 const timeAgoText = formatTimeAgo(order.createdAt || order.date);
 
-                // 1. New Orders Column Mapping
+                // 1. New Orders Column Mapping (Placed / Pending)
                 if (status === 'placed' || status === 'new' || status === 'pending') {
                     countNew++;
                     newContainer.innerHTML += `
@@ -442,7 +446,7 @@
                         </div>
                     `;
                 } 
-                // 2. Preparing Column Mapping
+                // 2. Preparing Column Mapping (Preparing / Cooking)
                 else if (status === 'preparing' || status === 'processing' || status === 'cooking') {
                     countPreparing++;
                     preparingContainer.innerHTML += `
@@ -467,7 +471,7 @@
                         </div>
                     `;
                 } 
-                // 3. Ready For Pickup Column Mapping
+                // 3. Ready For Pickup Column Mapping (Ready)
                 else if (status === 'ready' || status === 'ready for pickup') {
                     countReady++;
                     readyContainer.innerHTML += `
@@ -494,7 +498,7 @@
                 }
             });
 
-            // कॉलम काउंट्स अपडेट करना
+            // Column counts update karna
             const columns = document.querySelectorAll('.kanban-column');
             if (columns.length >= 3) {
                 columns[0].querySelector('.column-count').innerText = countNew;
@@ -503,9 +507,9 @@
             }
         }
 
-        // ऑर्डर स्टेटस अपडेट करने का फंक्शन (Accept/Reject/Ready/Handover के लिए)
+        // Order status update karne ka function (Accept/Reject/Ready/Handover)
         async function updateStatus(orderId, newStatus) {
-            const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || "";
+            const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || localStorage.getItem('adminToken') || "";
             try {
                 const response = await fetch(`${BASE_URL}/api/orders/${orderId}/status`, {
                     method: 'PUT',
@@ -516,14 +520,16 @@
                     body: JSON.stringify({ status: newStatus })
                 });
                 if (response.ok) {
-                    fetchLiveOrders(); // अपडेट के तुरंत बाद री-लोड़ करना
+                    fetchLiveOrders(); // Status update hote hi turant naya data load hoga
+                } else {
+                    alert("Failed to update status. Check your admin login!");
                 }
             } catch (error) {
                 console.error('Error updating order status:', error);
             }
         }
 
-        // टाइम फॉर्मेटिंग हेल्पर (जैसे: Just Now, 5 mins ago)
+        // Time formatting helper (e.g., Just Now, 5 mins ago)
         function formatTimeAgo(dateString) {
             if (!dateString) return "Just Now";
             const now = new Date();
