@@ -388,15 +388,13 @@
             let countReady = 0;
 
             orders.forEach(order => {
-                // Online Pending Filter Logic (Rakha hai taki garbage data block ho, par baki sabka status clear dikhega)
+                // Online/Offline Check
                 const paymentMethod = (order.paymentMethod || (order.paymentInfo && order.paymentInfo.method) || 'cod').toLowerCase();
                 const paymentStatusRaw = (order.paymentStatus || (order.paymentInfo && order.paymentInfo.status) || (order.isPaid ? 'paid' : 'pending')).toLowerCase();
                 
                 const isOnlinePayment = paymentMethod === 'online' || paymentMethod === 'card' || paymentMethod === 'upi';
                 
-                if (isOnlinePayment && (paymentStatusRaw === 'pending' || paymentStatusRaw === 'failed')) {
-                    return; 
-                }
+                // YAHA SE FILTER LOGIC REMOVE KAR DIYA HAI (Taaki pending online orders bhi dikhe)
 
                 const status = (order.status || order.orderStatus || 'Placed').toLowerCase();
                 
@@ -430,7 +428,7 @@
                     paymentColor = 'var(--danger)'; // Red if Online but Pending
                 }
 
-                // E.g., "COD (Pending)" or "Online Payment (Paid)"
+                // E.g., "COD (Pending)" or "Online Payment (Pending)"
                 let isPaidStatus = `${methodLabel} (${statusLabel})`;
 
                 const timeAgoText = formatTimeAgo(order.createdAt || order.date);
