@@ -286,7 +286,7 @@
         <section class="live-container">
             <div class="live-header">
                 <h3>Live Tracker</h3>
-                <button class="sound-btn"><i class="fas fa-volume-up"></i> Sound Alert On</button>
+                <button class="sound-btn" onclick="fetchLiveOrders()"><i class="fas fa-sync-alt"></i> Refresh Now</button>
             </div>
             
             <div class="kanban-board">
@@ -319,7 +319,7 @@
         </section>
     </main>
 
-<script>
+    <script>
         // Mobile Sidebar Toggle Logic
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -344,23 +344,24 @@
         }
 
         // --- BACKEND API DYNAMIC INTEGRATION ENGINE ---
+        // Yahan aapke main website ka backend aayega kyunki database wahan hai
         const BASE_URL = "https://homebite-aecl.onrender.com";
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchLiveOrders();
-            // Har 15 second me live orders ko automatic refresh karne ke liye
-            setInterval(fetchLiveOrders, 15000);
+            // Har 10 second me page data automatically refresh karega taaki naye orders dikh jayein
+            setInterval(fetchLiveOrders, 10000);
         });
 
-        // 🔥 FIX: Saare orders ko fetch karne ka sahi function
+        // Database se orders laane ka function
         async function fetchLiveOrders() {
-            // Admin token ko localStorage se check karna
+            // Admin Token auth ke liye
             const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || localStorage.getItem('adminToken') || "";
             const headers = { "Content-Type": "application/json" };
             if (token) headers["Authorization"] = `Bearer ${token}`;
 
             try {
-                // 👉 YAHAN BADLAAV KIYA HAI: 'my-orders' ki jagah 'all-orders' kiya hai
+                // Admin wale route '/all-orders' ko call kar rahe hain
                 const response = await fetch(`${BASE_URL}/api/orders/all-orders`, {
                     method: "GET",
                     headers: headers
@@ -370,10 +371,9 @@
 
                 const data = await response.json();
                 
-                // Agar backend direct array bhej raha hai ya filter karke object me orders bhej raha hai
                 const orders = Array.isArray(data) ? data : (data.orders || data.data || []);
 
-                // Sorting: Naye orders hamesha sabse upar dikhenge
+                // Latest orders upar dikhane ke liye sort
                 orders.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
 
                 renderKanbanBoard(orders);
@@ -382,13 +382,13 @@
             }
         }
 
-        // Board par orders render karne ka function
+        // Boards me Cards ko draw karne ka logic
         function renderKanbanBoard(orders) {
             const newContainer = document.getElementById('new-orders-container');
             const preparingContainer = document.getElementById('preparing-orders-container');
             const readyContainer = document.getElementById('ready-orders-container');
 
-            // Purane cards clear karna
+            // Purane display clear karo taki duplicate na bane
             newContainer.innerHTML = '';
             preparingContainer.innerHTML = '';
             readyContainer.innerHTML = '';
@@ -398,10 +398,9 @@
             let countReady = 0;
 
             orders.forEach(order => {
-                // Status check (lowercase me convert karke matching easy ho jaati hai)
                 const status = (order.status || order.orderStatus || 'Placed').toLowerCase();
                 
-                // Item list ka HTML taiyar karna
+                // Order me kya-kya manga gaya hai
                 let itemsHtml = '';
                 const items = order.orderItems || order.items || [];
                 items.forEach(item => {
@@ -414,13 +413,12 @@
                     `;
                 });
 
-                // Order details parse karna
                 const orderIdDisplay = order.orderId || (order._id ? `#HB-${order._id.slice(-4).toUpperCase()}` : '#HB-0000');
                 const customerName = order.customerName || (order.user && order.user.name) || (order.shippingAddress && order.shippingAddress.name) || 'Customer';
                 const totalAmount = order.totalPrice || order.totalAmount || 0;
                 const timeAgoText = formatTimeAgo(order.createdAt || order.date);
 
-                // 1. New Orders Column Mapping (Placed / Pending)
+                // COLUMN 1: NEW ORDERS
                 if (status === 'placed' || status === 'new' || status === 'pending') {
                     countNew++;
                     newContainer.innerHTML += `
@@ -441,12 +439,12 @@
                             </div>
                             <div class="action-container">
                                 <button class="btn btn-accept" onclick="updateStatus('${order._id || order.id}', 'Preparing')">Accept</button>
-                                <button class="btn btn-reject" onclick="updateStatus('${order._id || order.id}', 'Rejected')">Reject</button>
+                                <button class="btn btn-reject" onclick="updateStatus('${order._id || order.id}', 'Cancelled')">Reject</button>
                             </div>
                         </div>
                     `;
                 } 
-                // 2. Preparing Column Mapping (Preparing / Cooking)
+                // COLUMN 2: PREPARING
                 else if (status === 'preparing' || status === 'processing' || status === 'cooking') {
                     countPreparing++;
                     preparingContainer.innerHTML += `
@@ -471,7 +469,7 @@
                         </div>
                     `;
                 } 
-                // 3. Ready For Pickup Column Mapping (Ready)
+                // COLUMN 3: READY FOR PICKUP
                 else if (status === 'ready' || status === 'ready for pickup') {
                     countReady++;
                     readyContainer.innerHTML += `
@@ -496,9 +494,11 @@
                         </div>
                     `;
                 }
+                // Agar status Cancelled, Rejected, Delivered ya Out for delivery hai, 
+                // toh wo 'Live Orders' screen se gayab ho jayega (Order History me save rahega).
             });
 
-            // Column counts update karna
+            // Headings ke paas Number (Count) update karna
             const columns = document.querySelectorAll('.kanban-column');
             if (columns.length >= 3) {
                 columns[0].querySelector('.column-count').innerText = countNew;
@@ -507,29 +507,37 @@
             }
         }
 
-        // Order status update karne ka function (Accept/Reject/Ready/Handover)
+        // DATABASE ME STATUS SAVE KARNE KA FUNCTION! (Jo aap chahte the)
         async function updateStatus(orderId, newStatus) {
             const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || localStorage.getItem('adminToken') || "";
+            
+            // UI me turant response dikhane ke liye aap chaho to button ko disabled kar sakte ho
+            
             try {
+                // Backend API ko POST/PUT request dekar Data save karwaya ja raha hai
                 const response = await fetch(`${BASE_URL}/api/orders/${orderId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': token ? `Bearer ${token}` : ""
                     },
-                    body: JSON.stringify({ status: newStatus })
+                    body: JSON.stringify({ status: newStatus }) // Yahan naya status (Preparing/Ready/Delivered) bhej rahe hain
                 });
+                
                 if (response.ok) {
-                    fetchLiveOrders(); // Status update hote hi turant naya data load hoga
+                    // SUCCESS! Status save ho gaya, ab turant table naye sire se fetch karo 
+                    // Taki card agle column me jump kar jaye
+                    fetchLiveOrders(); 
                 } else {
-                    alert("Failed to update status. Check your admin login!");
+                    alert("Failed to save status in database. Check your admin login!");
                 }
             } catch (error) {
-                console.error('Error updating order status:', error);
+                console.error('Error saving order status:', error);
+                alert("Connection failed! Status not saved.");
             }
         }
 
-        // Time formatting helper (e.g., Just Now, 5 mins ago)
+        // Time format tool (Just Now, 5 mins ago)
         function formatTimeAgo(dateString) {
             if (!dateString) return "Just Now";
             const now = new Date();
