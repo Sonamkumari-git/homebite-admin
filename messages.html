@@ -239,7 +239,7 @@
             <li><a href="restaurant-dashboard.html" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
             <li><a href="live-orders.html" class="nav-item"><i class="fas fa-bell"></i> Live Orders</a></li>
             <li><a href="menu.html" class="nav-item"><i class="fas fa-utensils"></i> Menu Management</a></li>
-            <li><a href="messages.html" class="nav-item active"><i class="fas fa-envelope"></i> Messages <span style="background: var(--primary-color); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: auto;">New</span></a></li>
+            <li><a href="messages.html" class="nav-item active"><i class="fas fa-envelope"></i> Messages <span style="background: var(--primary-color); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: auto;" id="newMsgCount">0</span></a></li>
             <li><a href="history.html" class="nav-item"><i class="fas fa-history"></i> Order History</a></li>
             <li><a href="finances.html" class="nav-item"><i class="fas fa-wallet"></i> Finances</a></li>
             <li><a href="settings.html" class="nav-item"><i class="fas fa-cog"></i> Settings</a></li>
@@ -267,7 +267,7 @@
                 </div>
                 <div class="notification">
                     <i class="fas fa-bell"></i>
-                    <span class="badge">1</span>
+                    <span class="badge" id="notifBadge">0</span>
                 </div>
                 <div class="profile">
                     <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80" alt="Logo">
@@ -281,7 +281,7 @@
             <div class="action-bar">
                 <div class="filter-tabs">
                     <button class="filter-btn active">All Messages</button>
-                    <button class="filter-btn">Unread (1)</button>
+                    <button class="filter-btn">Unread</button>
                     <button class="filter-btn">Resolved</button>
                 </div>
                 <div class="search-box">
@@ -290,96 +290,18 @@
                 </div>
             </div>
 
-            <div class="message-list">
-                
-                <div class="message-card unread">
-                    <div class="msg-header">
-                        <div class="sender-info">
-                            <div class="sender-avatar">G</div>
-                            <div class="sender-details">
-                                <h4>gadha prasad</h4>
-                                <p>bt23ma008@nitmz.ac.in</p>
-                            </div>
-                        </div>
-                        <div class="msg-meta">
-                            <span class="msg-date">Jul 5, 2026 • 06:45 PM</span>
-                            <span class="status-badge new">New / Unread</span>
-                        </div>
-                    </div>
-                    
-                    <div class="msg-body">
-                        <div class="msg-subject">Subject: khana khana hai yaar</div>
-                        <div class="msg-text">
-                            "JLDI DO"
-                        </div>
-                    </div>
-                    
-                    <div class="msg-actions">
-                        <a href="mailto:bt23ma008@nitmz.ac.in" style="text-decoration:none;"><button class="btn-action btn-reply"><i class="fas fa-reply"></i> Reply via Email</button></a>
-                        <button class="btn-action btn-resolve"><i class="fas fa-check"></i> Mark as Resolved</button>
-                    </div>
+            <div class="message-list" id="dynamicMessageList">
+                <div style="text-align:center; padding: 40px; color: var(--text-muted);">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>Loading messages...</p>
                 </div>
-
-                <div class="message-card">
-                    <div class="msg-header">
-                        <div class="sender-info">
-                            <div class="sender-avatar" style="background: rgba(255,255,255,0.05); color: var(--text-muted);">S</div>
-                            <div class="sender-details">
-                                <h4 style="color: var(--text-muted);">Simran Kaur</h4>
-                                <p style="color: var(--text-muted);">simran.k@example.com</p>
-                            </div>
-                        </div>
-                        <div class="msg-meta">
-                            <span class="msg-date">Jul 3, 2026 • 02:15 PM</span>
-                            <span class="status-badge resolved">Resolved</span>
-                        </div>
-                    </div>
-                    
-                    <div class="msg-body">
-                        <div class="msg-subject" style="color: var(--text-muted);">Subject: Missing item in order #HB-4012</div>
-                        <div class="msg-text">
-                            "Hi team, I received my order but the complementary Coke was missing from the meal combo. Can you please check?"
-                        </div>
-                    </div>
-                    
-                    <div class="msg-actions">
-                        <button class="btn-action btn-delete"><i class="fas fa-trash-alt"></i> Delete</button>
-                    </div>
-                </div>
-
-                <div class="message-card">
-                    <div class="msg-header">
-                        <div class="sender-info">
-                            <div class="sender-avatar" style="background: rgba(255,255,255,0.05); color: var(--text-muted);">A</div>
-                            <div class="sender-details">
-                                <h4 style="color: var(--text-muted);">Aman Verma</h4>
-                                <p style="color: var(--text-muted);">aman.verma@gmail.com</p>
-                            </div>
-                        </div>
-                        <div class="msg-meta">
-                            <span class="msg-date">Jun 28, 2026 • 11:30 AM</span>
-                            <span class="status-badge resolved">Resolved</span>
-                        </div>
-                    </div>
-                    
-                    <div class="msg-body">
-                        <div class="msg-subject" style="color: var(--text-muted);">Subject: Great Food Quality!</div>
-                        <div class="msg-text">
-                            "Just wanted to say that the Paneer Tikka I ordered yesterday was absolutely amazing. Keep up the good work!"
-                        </div>
-                    </div>
-                    
-                    <div class="msg-actions">
-                        <button class="btn-action btn-delete"><i class="fas fa-trash-alt"></i> Delete</button>
-                    </div>
-                </div>
-
             </div>
+
         </section>
     </main>
 
     <script>
-        // Mobile Sidebar Opening/Closing Logic
+        // === UI INTERACTION LOGIC ===
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobileOverlay');
@@ -388,7 +310,6 @@
             overlay.classList.toggle('show');
         }
 
-        // Restaurant Portal Main Toggle (Online/Closed)
         function toggleRestaurantStatus() {
             const toggle = document.getElementById('restStatusToggle');
             const statusText = document.getElementById('restStatusText');
@@ -401,6 +322,105 @@
                 statusText.style.color = "var(--danger)";
             }
         }
+
+        // === FETCH MESSAGES FROM BACKEND API ===
+        async function fetchMessages() {
+            const messageList = document.getElementById('dynamicMessageList');
+            
+            try {
+                // Yahan '/api/contacts' aapke backend ka GET route hona chahiye
+                const response = await fetch('/api/contacts'); // CHANGE THIS URL if needed
+                
+                if(!response.ok) {
+                    throw new Error('Failed to fetch messages');
+                }
+                
+                const messages = await response.json();
+                
+                // Clear the loading text
+                messageList.innerHTML = '';
+                
+                let unreadCount = 0;
+
+                if(messages.length === 0) {
+                    messageList.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">No messages found.</div>`;
+                    return;
+                }
+
+                // Loop over the messages and create HTML cards
+                messages.forEach(msg => {
+                    // Yahan assume kar rahe hain ki database me status property hai. Agar nahi hai toh apne hisab se logic change kar lena.
+                    const isUnread = msg.status === 'unread' || !msg.isResolved; 
+                    if(isUnread) unreadCount++;
+
+                    // Format Date
+                    const dateObj = new Date(msg.createdAt || Date.now());
+                    const formattedDate = dateObj.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    
+                    // First Letter for Avatar
+                    const initial = msg.name ? msg.name.charAt(0).toUpperCase() : 'U';
+
+                    const cardHTML = `
+                        <div class="message-card ${isUnread ? 'unread' : ''}">
+                            <div class="msg-header">
+                                <div class="sender-info">
+                                    <div class="sender-avatar" ${!isUnread ? 'style="background: rgba(255,255,255,0.05); color: var(--text-muted);"' : ''}>${initial}</div>
+                                    <div class="sender-details">
+                                        <h4 ${!isUnread ? 'style="color: var(--text-muted);"' : ''}>${msg.name}</h4>
+                                        <p ${!isUnread ? 'style="color: var(--text-muted);"' : ''}>${msg.email}</p>
+                                    </div>
+                                </div>
+                                <div class="msg-meta">
+                                    <span class="msg-date">${formattedDate}</span>
+                                    <span class="status-badge ${isUnread ? 'new' : 'resolved'}">${isUnread ? 'New / Unread' : 'Resolved'}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="msg-body">
+                                <div class="msg-subject" ${!isUnread ? 'style="color: var(--text-muted);"' : ''}>Subject: ${msg.subject || 'Customer Query'}</div>
+                                <div class="msg-text">
+                                    "${msg.message || msg.query}"
+                                </div>
+                            </div>
+                            
+                            <div class="msg-actions">
+                                ${isUnread ? `
+                                    <a href="mailto:${msg.email}" style="text-decoration:none;"><button class="btn-action btn-reply"><i class="fas fa-reply"></i> Reply via Email</button></a>
+                                    <button class="btn-action btn-resolve" onclick="markAsResolved('${msg._id}')"><i class="fas fa-check"></i> Mark as Resolved</button>
+                                ` : `
+                                    <button class="btn-action btn-delete" onclick="deleteMessage('${msg._id}')"><i class="fas fa-trash-alt"></i> Delete</button>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                    messageList.insertAdjacentHTML('beforeend', cardHTML);
+                });
+
+                // Update notification badges dynamically
+                document.getElementById('notifBadge').innerText = unreadCount;
+                document.getElementById('newMsgCount').innerText = unreadCount > 0 ? `${unreadCount} New` : '';
+
+            } catch (error) {
+                console.error("Error fetching data: ", error);
+                messageList.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--danger);">Error loading messages. Please check your connection or backend API.</div>`;
+            }
+        }
+
+        // Functions for button clicks (apne API endpoints yahan daalna future me)
+        function markAsResolved(id) {
+            console.log("Marking resolved for ID:", id);
+            // Example: fetch(`/api/contacts/${id}`, { method: 'PUT', body: JSON.stringify({status: 'resolved'}) })
+            alert('Yeh abhi UI function hai. Backend integration baad me connect kar lena.');
+        }
+
+        function deleteMessage(id) {
+            console.log("Deleting ID:", id);
+            // Example: fetch(`/api/contacts/${id}`, { method: 'DELETE' })
+            alert('Yeh message delete karne ka UI function hai.');
+        }
+
+        // Jab page load ho tab automatically database se fetch kare
+        document.addEventListener('DOMContentLoaded', fetchMessages);
     </script>
 </body>
 </html>
