@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HomeBite | Messages & Queries</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght=0,500;0,700;0,800;1,600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -310,6 +310,7 @@
             overlay.classList.toggle('show');
         }
 
+        // === RESTAURANT STATUS TOGGLE ===
         function toggleRestaurantStatus() {
             const toggle = document.getElementById('restStatusToggle');
             const statusText = document.getElementById('restStatusText');
@@ -323,103 +324,105 @@
             }
         }
 
-        // === FETCH MESSAGES FROM BACKEND API ===
+        // === FETCH LIVE MESSAGES FROM RENDER BACKEND ===
         async function fetchMessages() {
             const messageList = document.getElementById('dynamicMessageList');
             
             try {
-                // Yahan '/api/contacts' aapke backend ka GET route hona chahiye
-                const response = await fetch('/api/contacts'); // CHANGE THIS URL if needed
+                // Aapka live Render API Endpoint jahan se data nikalna hai
+                const apiURL = 'https://homebite-admin.onrender.com/api/contacts';
+                
+                const response = await fetch(apiURL);
                 
                 if(!response.ok) {
-                    throw new Error('Failed to fetch messages');
+                    throw new Error(`HTTP Error! Status: ${response.status}`);
                 }
                 
                 const messages = await response.json();
                 
-                // Clear the loading text
+                // Loader clear karein
                 messageList.innerHTML = '';
                 
-                let unreadCount = 0;
-
-                if(messages.length === 0) {
-                    messageList.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">No messages found.</div>`;
+                if(!messages || messages.length === 0) {
+                    messageList.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted);">Database me koi message nahi mila.</div>`;
                     return;
                 }
 
-                // Loop over the messages and create HTML cards
-                messages.forEach(msg => {
-                    // Yahan assume kar rahe hain ki database me status property hai. Agar nahi hai toh apne hisab se logic change kar lena.
-                    const isUnread = msg.status === 'unread' || !msg.isResolved; 
-                    if(isUnread) unreadCount++;
+                let totalCount = messages.length;
 
-                    // Format Date
-                    const dateObj = new Date(msg.createdAt || Date.now());
-                    const formattedDate = dateObj.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                // Loop chala kar ek-ek document ka data template me fill karenge
+                messages.forEach(msg => {
+                    // Date Format processing (Ex: "Jul 7, 2026, 11:55 AM")
+                    const dateObj = msg.createdAt ? new Date(msg.createdAt) : new Date();
+                    const formattedDate = dateObj.toLocaleString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
                     
-                    // First Letter for Avatar
+                    // Name ka pehla akshar avatar text ke liye (Ex: "rupesh" -> "R")
                     const initial = msg.name ? msg.name.charAt(0).toUpperCase() : 'U';
 
+                    // Pura raw data card mapping: msg.name, msg.email, msg.subject, msg.message, msg._id
                     const cardHTML = `
-                        <div class="message-card ${isUnread ? 'unread' : ''}">
+                        <div class="message-card unread">
                             <div class="msg-header">
                                 <div class="sender-info">
-                                    <div class="sender-avatar" ${!isUnread ? 'style="background: rgba(255,255,255,0.05); color: var(--text-muted);"' : ''}>${initial}</div>
+                                    <div class="sender-avatar">${initial}</div>
                                     <div class="sender-details">
-                                        <h4 ${!isUnread ? 'style="color: var(--text-muted);"' : ''}>${msg.name}</h4>
-                                        <p ${!isUnread ? 'style="color: var(--text-muted);"' : ''}>${msg.email}</p>
+                                        <h4>${msg.name || 'Anonymous'}</h4>
+                                        <p>${msg.email || 'No Email'}</p>
                                     </div>
                                 </div>
                                 <div class="msg-meta">
                                     <span class="msg-date">${formattedDate}</span>
-                                    <span class="status-badge ${isUnread ? 'new' : 'resolved'}">${isUnread ? 'New / Unread' : 'Resolved'}</span>
+                                    <span class="status-badge new">New Message</span>
                                 </div>
                             </div>
                             
                             <div class="msg-body">
-                                <div class="msg-subject" ${!isUnread ? 'style="color: var(--text-muted);"' : ''}>Subject: ${msg.subject || 'Customer Query'}</div>
+                                <div class="msg-subject">Subject: ${msg.subject || 'No Subject'}</div>
                                 <div class="msg-text">
-                                    "${msg.message || msg.query}"
+                                    "${msg.message || 'Empty message content.'}"
                                 </div>
                             </div>
                             
                             <div class="msg-actions">
-                                ${isUnread ? `
-                                    <a href="mailto:${msg.email}" style="text-decoration:none;"><button class="btn-action btn-reply"><i class="fas fa-reply"></i> Reply via Email</button></a>
-                                    <button class="btn-action btn-resolve" onclick="markAsResolved('${msg._id}')"><i class="fas fa-check"></i> Mark as Resolved</button>
-                                ` : `
-                                    <button class="btn-action btn-delete" onclick="deleteMessage('${msg._id}')"><i class="fas fa-trash-alt"></i> Delete</button>
-                                `}
+                                <a href="mailto:${msg.email}" style="text-decoration:none;">
+                                    <button class="btn-action btn-reply"><i class="fas fa-reply"></i> Reply via Email</button>
+                                </a>
+                                <button class="btn-action btn-resolve" onclick="markAsResolved('${msg._id}')">
+                                    <i class="fas fa-check"></i> Mark as Resolved
+                                </button>
                             </div>
                         </div>
                     `;
                     messageList.insertAdjacentHTML('beforeend', cardHTML);
                 });
 
-                // Update notification badges dynamically
-                document.getElementById('notifBadge').innerText = unreadCount;
-                document.getElementById('newMsgCount').innerText = unreadCount > 0 ? `${unreadCount} New` : '';
+                // Badges ko total count se live update karein
+                document.getElementById('notifBadge').innerText = totalCount;
+                document.getElementById('newMsgCount').innerText = `${totalCount} New`;
 
             } catch (error) {
-                console.error("Error fetching data: ", error);
-                messageList.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--danger);">Error loading messages. Please check your connection or backend API.</div>`;
+                console.error("Fetch API error detail:", error);
+                messageList.innerHTML = `
+                    <div style="text-align:center; padding: 40px; color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>Error loading messages. Please check your connection or backend CORS setup.</p>
+                    </div>
+                `;
             }
         }
 
-        // Functions for button clicks (apne API endpoints yahan daalna future me)
+        // Action Trigger Functions
         function markAsResolved(id) {
-            console.log("Marking resolved for ID:", id);
-            // Example: fetch(`/api/contacts/${id}`, { method: 'PUT', body: JSON.stringify({status: 'resolved'}) })
-            alert('Yeh abhi UI function hai. Backend integration baad me connect kar lena.');
+            alert(`Message ID: ${id} ko resolve karne ka functionality future update me backend se connect karein.`);
         }
 
-        function deleteMessage(id) {
-            console.log("Deleting ID:", id);
-            // Example: fetch(`/api/contacts/${id}`, { method: 'DELETE' })
-            alert('Yeh message delete karne ka UI function hai.');
-        }
-
-        // Jab page load ho tab automatically database se fetch kare
+        // Page load hote hi data load ho jaye automatically
         document.addEventListener('DOMContentLoaded', fetchMessages);
     </script>
 </body>
