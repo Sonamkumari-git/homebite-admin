@@ -157,7 +157,7 @@
         .table-wrapper { background: var(--card-bg); border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); overflow: hidden; }
         .table-responsive { overflow-x: auto; padding: 0 25px 10px 25px; }
         
-        table { width: 100%; border-collapse: collapse; min-width: 1000px; } /* Increased min-width for new columns */
+        table { width: 100%; border-collapse: collapse; min-width: 1100px; } 
         th, td { padding: 18px 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
         th { color: var(--text-muted); font-weight: 500; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; padding-top: 25px; }
         tr:hover td { background: rgba(255,255,255,0.02); }
@@ -165,13 +165,14 @@
         .order-id { font-weight: 600; color: #fff; }
         .date-time { font-size: 0.85rem; color: var(--text-muted); display: block; margin-top: 4px; }
         
-        /* New Customer Info Styles */
+        /* Customer Info Styles */
         .customer-info .customer-name { font-weight: 500; color: var(--secondary-color); }
         .customer-info .customer-phone { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 5px; }
         .delivery-address { font-size: 0.85rem; color: #ccc; max-width: 220px; line-height: 1.4; word-wrap: break-word; }
         
         .item-list { font-size: 0.85rem; color: #ccc; line-height: 1.5; max-width: 200px; }
         .amount { font-weight: 600; color: #fff; }
+        .payment-info { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
 
         .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; text-align: center; }
         .status-badge.delivered { background: rgba(46, 213, 115, 0.1); color: var(--success); border: 1px solid rgba(46, 213, 115, 0.2); }
@@ -276,7 +277,7 @@
                 <div class="filter-group">
                     <div class="filter-item search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" class="filter-input" placeholder="Search Order ID or Name...">
+                        <input type="text" id="searchInput" class="filter-input" placeholder="Search Order ID, Name or Phone...">
                     </div>
                     <div class="filter-item">
                         <label>Filter By Status</label>
@@ -299,7 +300,7 @@
                                 <th>Customer Info</th>
                                 <th>Delivery Address</th>
                                 <th>Items Ordered</th>
-                                <th>Amount</th>
+                                <th>Amount & Payment</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
@@ -352,7 +353,7 @@
 
         // === FETCH AND DISPLAY ORDER HISTORY LOGIC ===
 
-        let allHistoryOrders = []; // Server se aaye past orders save karne ke liye
+        let allHistoryOrders = []; 
 
         async function fetchOrderHistory() {
             const token = localStorage.getItem('adminToken');
@@ -362,7 +363,6 @@
             }
 
             try {
-                // 🔥 FIX: Localhost se hata kar production Render URL laga diya hai
                 const res = await fetch('https://homebite-admin.onrender.com/api/orders/all-orders', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -406,18 +406,28 @@
                 const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 const timeString = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-                // Safely extract name, phone & address (Handles multiple possible JSON structures)
-                const name = (order.user && order.user.name) || (order.user && order.user.email) || 'Guest';
-                const phone = order.phone || (order.user && order.user.phone) || (order.shippingAddress && order.shippingAddress.phone) || 'Not Provided';
+                // 🔥 ROBUST EXTRACTION: Name aur Phone ke liye multiple checks taaki error na aaye
+                const name = order.name || order.customerName || (order.deliveryAddress && order.deliveryAddress.name) || (order.shippingAddress && order.shippingAddress.name) || (order.user && order.user.name) || 'Guest';
+                const phone = order.phone || order.customerPhone || (order.deliveryAddress && order.deliveryAddress.phone) || (order.shippingAddress && order.shippingAddress.phone) || (order.user && order.user.phone) || 'Not Provided';
                 
+                // Address Extraction
                 let address = 'Not Provided';
                 if (order.address && typeof order.address === 'string') {
                     address = order.address;
+                } else if (order.deliveryAddress) {
+                    address = typeof order.deliveryAddress === 'string' 
+                        ? order.deliveryAddress 
+                        : `${order.deliveryAddress.address || ''} ${order.deliveryAddress.street || ''} ${order.deliveryAddress.city || ''} ${order.deliveryAddress.zipCode || ''}`.trim() || 'Not Provided';
                 } else if (order.shippingAddress) {
                     address = typeof order.shippingAddress === 'string' 
                         ? order.shippingAddress 
                         : `${order.shippingAddress.street || ''} ${order.shippingAddress.city || ''} ${order.shippingAddress.zipCode || ''}`.trim() || 'Not Provided';
                 }
+
+                // Payment Data Extraction
+                const paymentMethod = order.paymentMethod || 'COD';
+                const paymentStatus = order.paymentStatus || (order.isPaid ? 'Paid' : 'Pending');
+                const paymentColor = paymentStatus.toLowerCase() === 'paid' ? 'var(--success)' : (paymentStatus.toLowerCase() === 'failed' ? 'var(--danger)' : 'var(--secondary-color)');
 
                 // Items text banana
                 let itemsText = "No items";
@@ -432,7 +442,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>
-                        <span class="order-id">#HB-${order._id.substring(order._id.length - 4).toUpperCase()}</span>
+                        <span class="order-id">#HB-${(order._id || '0000').substring((order._id || '0000').length - 4).toUpperCase()}</span>
                         <span class="date-time">${dateString} • ${timeString}</span>
                     </td>
                     <td class="customer-info">
@@ -445,7 +455,10 @@
                     <td>
                         <div class="item-list" title="${itemsText}">${itemsText.length > 40 ? itemsText.substring(0, 40) + '...' : itemsText}</div>
                     </td>
-                    <td class="amount">₹${order.totalAmount || 0}</td>
+                    <td>
+                        <div class="amount">₹${order.totalAmount || order.amount || 0}</div>
+                        <div class="payment-info">${paymentMethod.toUpperCase()} • <span style="color: ${paymentColor}; font-weight: 600;">${paymentStatus}</span></div>
+                    </td>
                     <td><span class="status-badge ${statusClass}">${order.status}</span></td>
                     <td><button class="btn-details" onclick="alert('Details for ${order._id}')">View Details</button></td>
                 `;
@@ -456,11 +469,15 @@
         // Search box aur Filter event listeners
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            const filtered = allHistoryOrders.filter(o => 
-                o._id.toLowerCase().includes(term) || 
-                (o.user && o.user.name && o.user.name.toLowerCase().includes(term)) ||
-                (o.phone && o.phone.includes(term)) // Can search by phone number too now
-            );
+            const filtered = allHistoryOrders.filter(o => {
+                const searchName = o.name || o.customerName || (o.user && o.user.name) || '';
+                const searchPhone = o.phone || o.customerPhone || (o.deliveryAddress && o.deliveryAddress.phone) || '';
+                const searchId = o._id || '';
+
+                return searchId.toLowerCase().includes(term) || 
+                       searchName.toLowerCase().includes(term) || 
+                       searchPhone.includes(term);
+            });
             renderHistoryTable(filtered);
         });
 
