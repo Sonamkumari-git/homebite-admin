@@ -171,6 +171,8 @@
         .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; text-align: center; }
         .status-badge.delivered { background: rgba(46, 213, 115, 0.1); color: var(--success); border: 1px solid rgba(46, 213, 115, 0.2); }
         .status-badge.cancelled { background: rgba(255, 71, 87, 0.1); color: var(--danger); border: 1px solid rgba(255, 71, 87, 0.2); }
+        /* Add styling for rejected if needed */
+        .status-badge.rejected { background: rgba(255, 71, 87, 0.1); color: var(--danger); border: 1px solid rgba(255, 71, 87, 0.2); }
 
         .btn-details { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 15px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; transition: 0.3s; font-weight: 500; }
         .btn-details:hover { background: var(--primary-color); border-color: var(--primary-color); }
@@ -270,26 +272,18 @@
                 <div class="filter-group">
                     <div class="filter-item search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" class="filter-input" placeholder="Search Order ID or Name...">
+                        <input type="text" id="searchInput" class="filter-input" placeholder="Search Order ID or Name...">
                     </div>
                     <div class="filter-item">
                         <label>Filter By Status</label>
-                        <select class="filter-input">
-                            <option value="all">All Orders</option>
+                        <select id="statusFilter" class="filter-input">
+                            <option value="all">All History</option>
                             <option value="delivered">Delivered Only</option>
                             <option value="cancelled">Cancelled Only</option>
                         </select>
                     </div>
-                    <div class="filter-item">
-                        <label>Date From</label>
-                        <input type="date" class="filter-input">
-                    </div>
-                    <div class="filter-item">
-                        <label>Date To</label>
-                        <input type="date" class="filter-input">
-                    </div>
                 </div>
-                <button class="btn-export"><i class="fas fa-download"></i> Export to CSV</button>
+                <button class="btn-export" onclick="alert('Export feature coming soon!')"><i class="fas fa-download"></i> Export to CSV</button>
             </div>
 
             <div class="table-wrapper">
@@ -305,89 +299,19 @@
                                 <th>Action</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="historyTableBody">
                             <tr>
-                                <td>
-                                    <span class="order-id">#HB-4085</span>
-                                    <span class="date-time">Jul 5, 2026 • 01:30 PM</span>
-                                </td>
-                                <td class="customer-name">Suresh Raina</td>
-                                <td>
-                                    <div class="item-list">1x Shahi Chicken Biryani, 1x Coke (300ml), 2x Garlic Naan</div>
-                                </td>
-                                <td class="amount">₹680</td>
-                                <td><span class="status-badge delivered">Delivered</span></td>
-                                <td><button class="btn-details">View Details</button></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>
-                                    <span class="order-id">#HB-4082</span>
-                                    <span class="date-time">Jul 5, 2026 • 12:15 PM</span>
-                                </td>
-                                <td class="customer-name">Anita Sharma</td>
-                                <td>
-                                    <div class="item-list">2x Molten Lava Cake</div>
-                                </td>
-                                <td class="amount">₹440</td>
-                                <td><span class="status-badge cancelled">Cancelled</span></td>
-                                <td><button class="btn-details">View Details</button></td>
-                            </tr>
-                            
-                            <tr>
-                                <td>
-                                    <span class="order-id">#HB-4079</span>
-                                    <span class="date-time">Jul 4, 2026 • 08:45 PM</span>
-                                </td>
-                                <td class="customer-name">Vikram Singh</td>
-                                <td>
-                                    <div class="item-list">1x Grilled Atlantic Salmon, 1x Masala Lemonade</div>
-                                </td>
-                                <td class="amount">₹1250</td>
-                                <td><span class="status-badge delivered">Delivered</span></td>
-                                <td><button class="btn-details">View Details</button></td>
-                            </tr>
-
-                            <tr>
-                                <td>
-                                    <span class="order-id">#HB-4071</span>
-                                    <span class="date-time">Jul 4, 2026 • 07:10 PM</span>
-                                </td>
-                                <td class="customer-name">Riya Patel</td>
-                                <td>
-                                    <div class="item-list">3x Paneer Tikka Grill, 4x Butter Roti</div>
-                                </td>
-                                <td class="amount">₹1150</td>
-                                <td><span class="status-badge delivered">Delivered</span></td>
-                                <td><button class="btn-details">View Details</button></td>
-                            </tr>
-
-                            <tr>
-                                <td>
-                                    <span class="order-id">#HB-4065</span>
-                                    <span class="date-time">Jul 3, 2026 • 09:20 PM</span>
-                                </td>
-                                <td class="customer-name">Aakash Gupta</td>
-                                <td>
-                                    <div class="item-list">1x Truffle Pasta, 1x Cheesy Garlic Bread</div>
-                                </td>
-                                <td class="amount">₹950</td>
-                                <td><span class="status-badge delivered">Delivered</span></td>
-                                <td><button class="btn-details">View Details</button></td>
+                                <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">Loading history...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
                 <div class="pagination">
-                    <div class="page-info">Showing 1 to 5 of 142 Orders</div>
+                    <div class="page-info" id="pageInfo">Showing 0 Orders</div>
                     <div class="page-controls">
                         <button class="page-btn wide">Prev</button>
                         <button class="page-btn active">1</button>
-                        <button class="page-btn">2</button>
-                        <button class="page-btn">3</button>
-                        <span style="color: var(--text-muted); display: flex; align-items: flex-end; padding-bottom: 5px;">...</span>
-                        <button class="page-btn">29</button>
                         <button class="page-btn wide">Next</button>
                     </div>
                 </div>
@@ -420,6 +344,114 @@
                 statusText.style.color = "var(--danger)";
             }
         }
+
+        // === FETCH AND DISPLAY ORDER HISTORY LOGIC ===
+
+        let allHistoryOrders = []; // Server se aaye past orders save karne ke liye
+
+        async function fetchOrderHistory() {
+            const token = localStorage.getItem('adminToken');
+            if(!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                // Aapka existing GET API route call kar rahe hain
+                const res = await fetch('http://localhost:5000/api/orders/all-orders', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!res.ok) throw new Error("Failed to fetch");
+
+                const orders = await res.json();
+                
+                // Sirf wo orders lo jo Delivered, Cancelled ya Rejected hain
+                allHistoryOrders = orders.filter(o => 
+                    o.status.toLowerCase() === 'delivered' || 
+                    o.status.toLowerCase() === 'cancelled' || 
+                    o.status.toLowerCase() === 'rejected'
+                );
+
+                renderHistoryTable(allHistoryOrders);
+
+            } catch (err) {
+                console.error("Error fetching history:", err);
+                document.getElementById('historyTableBody').innerHTML = `
+                    <tr><td colspan="6" style="text-align: center; color: var(--danger);">Failed to load data. Make sure backend is running.</td></tr>
+                `;
+            }
+        }
+
+        // Table me rows draw karne ka function
+        function renderHistoryTable(dataToRender) {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = "";
+
+            document.getElementById('pageInfo').innerText = `Showing ${dataToRender.length} Orders`;
+
+            if (dataToRender.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No history found.</td></tr>`;
+                return;
+            }
+
+            dataToRender.forEach(order => {
+                // Date formatting
+                const dateObj = new Date(order.createdAt);
+                const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const timeString = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                // Items text banana
+                let itemsText = "No items";
+                if(order.items && order.items.length > 0) {
+                    itemsText = order.items.map(i => `${i.quantity}x ${i.name}`).join(', ');
+                }
+
+                // Status ke hisaab se CSS class dena
+                let statusClass = 'cancelled';
+                if(order.status.toLowerCase() === 'delivered') statusClass = 'delivered';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <span class="order-id">#HB-${order._id.substring(order._id.length - 4).toUpperCase()}</span>
+                        <span class="date-time">${dateString} • ${timeString}</span>
+                    </td>
+                    <td class="customer-name">${order.user.name || order.user.email || 'Guest'}</td>
+                    <td>
+                        <div class="item-list" title="${itemsText}">${itemsText.length > 50 ? itemsText.substring(0, 50) + '...' : itemsText}</div>
+                    </td>
+                    <td class="amount">₹${order.totalAmount || 0}</td>
+                    <td><span class="status-badge ${statusClass}">${order.status}</span></td>
+                    <td><button class="btn-details" onclick="alert('Details for ${order._id}')">View Details</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Search box aur Filter event listeners
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allHistoryOrders.filter(o => 
+                o._id.toLowerCase().includes(term) || 
+                (o.user.name && o.user.name.toLowerCase().includes(term))
+            );
+            renderHistoryTable(filtered);
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', (e) => {
+            const val = e.target.value.toLowerCase();
+            if(val === 'all') {
+                renderHistoryTable(allHistoryOrders);
+            } else {
+                const filtered = allHistoryOrders.filter(o => o.status.toLowerCase() === val);
+                renderHistoryTable(filtered);
+            }
+        });
+
+        // Page load pe fetch call karo
+        window.onload = fetchOrderHistory;
+
     </script>
 </body>
 </html>
