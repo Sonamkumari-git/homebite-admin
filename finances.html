@@ -270,11 +270,11 @@
             <div class="summary-grid">
                 <div class="finance-card">
                     <div class="fc-header">
-                        <span>Total Sales (This Month)</span>
+                        <span>Total Sales (Lifetime)</span>
                         <i class="fas fa-rupee-sign" style="color: var(--text-muted);"></i>
                     </div>
-                    <div class="fc-amount">₹1,45,200</div>
-                    <div class="fc-subtext"><span style="color: var(--success);"><i class="fas fa-arrow-up"></i> 12.5%</span> vs last month</div>
+                    <div class="fc-amount" id="totalSalesEl">₹0.00</div>
+                    <div class="fc-subtext">Total value of all paid orders</div>
                 </div>
                 
                 <div class="finance-card">
@@ -282,7 +282,7 @@
                         <span>Platform Deductions (15%)</span>
                         <i class="fas fa-chart-pie" style="color: var(--danger);"></i>
                     </div>
-                    <div class="fc-amount" style="color: #ffb8b8;">- ₹21,780</div>
+                    <div class="fc-amount" style="color: #ffb8b8;" id="deductionsEl">- ₹0.00</div>
                     <div class="fc-subtext">Includes HomeBite commission & taxes</div>
                 </div>
 
@@ -291,17 +291,17 @@
                         <span>Net Earnings</span>
                         <i class="fas fa-wallet" style="color: var(--success);"></i>
                     </div>
-                    <div class="fc-amount">₹1,23,420</div>
+                    <div class="fc-amount" id="netEarningsEl">₹0.00</div>
                     <div class="fc-subtext">Total amount payable to you</div>
                 </div>
 
                 <div class="finance-card fc-highlight">
                     <div class="fc-header">
-                        <span>Next Expected Payout</span>
-                        <i class="fas fa-clock" style="color: var(--primary-color);"></i>
+                        <span>Active Paid Orders</span>
+                        <i class="fas fa-check-circle" style="color: var(--primary-color);"></i>
                     </div>
-                    <div class="fc-amount">₹18,500</div>
-                    <div class="fc-subtext">Scheduled for: <strong>Jul 7, 2026</strong></div>
+                    <div class="fc-amount" id="paidCountEl">0</div>
+                    <div class="fc-subtext">Successfully processed transactions</div>
                 </div>
             </div>
 
@@ -309,75 +309,37 @@
                 <div class="filter-group">
                     <span style="font-size: 0.9rem; color: var(--text-muted);">Filter Payouts:</span>
                     <select class="filter-input">
-                        <option value="last_30">Last 30 Days</option>
+                        <option value="last_30">Lifetime History</option>
                         <option value="last_3_months">Last 3 Months</option>
                         <option value="this_year">This Year</option>
                     </select>
                 </div>
-                <button class="btn-action btn-report"><i class="fas fa-download"></i> Download Monthly Statement</button>
+                <button class="btn-action btn-report" onclick="alert('PDF Report Downloading Feature Coming Soon!')"><i class="fas fa-download"></i> Download Monthly Statement</button>
             </div>
 
             <div class="table-wrapper">
                 <div class="table-header">
-                    <h3>Recent Payout History</h3>
+                    <h3>Recent Transactions (Paid Orders)</h3>
                 </div>
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
                                 <th>Transaction ID</th>
-                                <th>Payout Cycle</th>
+                                <th>Order Ref</th>
                                 <th>Processed Date</th>
                                 <th>Amount</th>
                                 <th>Status</th>
                                 <th>Invoice</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="payoutTableBody">
                             <tr>
-                                <td>
-                                    <span class="trx-id">TXN-9840291A</span>
+                                <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                                    <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px;"></i>
+                                    <br>Calculating live finances...
                                 </td>
-                                <td class="trx-cycle">Jun 28 - Jul 04, 2026</td>
-                                <td class="trx-date">Scheduled: Jul 07, 2026</td>
-                                <td class="trx-amount">₹18,500</td>
-                                <td><span class="status-badge processing">Processing</span></td>
-                                <td><button class="btn-invoice" disabled style="opacity: 0.5;"><i class="fas fa-file-invoice"></i> Pending</button></td>
                             </tr>
-                            
-                            <tr>
-                                <td>
-                                    <span class="trx-id">TXN-8739102B</span>
-                                </td>
-                                <td class="trx-cycle">Jun 21 - Jun 27, 2026</td>
-                                <td class="trx-date">Jun 30, 2026</td>
-                                <td class="trx-amount">₹24,150</td>
-                                <td><span class="status-badge paid">Paid</span></td>
-                                <td><button class="btn-invoice"><i class="fas fa-file-pdf"></i> Download</button></td>
-                            </tr>
-
-                            <tr>
-                                <td>
-                                    <span class="trx-id">TXN-7628093C</span>
-                                </td>
-                                <td class="trx-cycle">Jun 14 - Jun 20, 2026</td>
-                                <td class="trx-date">Jun 23, 2026</td>
-                                <td class="trx-amount">₹21,800</td>
-                                <td><span class="status-badge paid">Paid</span></td>
-                                <td><button class="btn-invoice"><i class="fas fa-file-pdf"></i> Download</button></td>
-                            </tr>
-
-                            <tr>
-                                <td>
-                                    <span class="trx-id">TXN-6517984D</span>
-                                </td>
-                                <td class="trx-cycle">Jun 07 - Jun 13, 2026</td>
-                                <td class="trx-date">Jun 16, 2026</td>
-                                <td class="trx-amount">₹19,420</td>
-                                <td><span class="status-badge paid">Paid</span></td>
-                                <td><button class="btn-invoice"><i class="fas fa-file-pdf"></i> Download</button></td>
-                            </tr>
-
                         </tbody>
                     </table>
                 </div>
@@ -387,20 +349,17 @@
     </main>
 
     <script>
-        // Mobile Sidebar Toggle Logic
+        // Mobile Sidebar Toggle
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobileOverlay');
-            
             sidebar.classList.toggle('show');
             overlay.classList.toggle('show');
         }
 
-        // Restaurant Portal Main Toggle (Online/Closed)
         function toggleRestaurantStatus() {
             const toggle = document.getElementById('restStatusToggle');
             const statusText = document.getElementById('restStatusText');
-            
             if(toggle.checked) {
                 statusText.innerText = "Accepting Orders";
                 statusText.style.color = "var(--text-light)";
@@ -409,6 +368,100 @@
                 statusText.style.color = "var(--danger)";
             }
         }
+
+        // === FETCH LIVE FINANCES ===
+        async function fetchFinances() {
+            const token = localStorage.getItem('adminToken');
+            if(!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                // Fetching all orders
+                const res = await fetch('https://homebite-admin.onrender.com/api/orders/all-orders', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!res.ok) throw new Error("Failed to fetch orders");
+
+                const allOrders = await res.json();
+                
+                // Sirf wo orders lo jo Delivered hain ya Paid ho chuke hain
+                const paidOrders = allOrders.filter(order => {
+                    const status = order.status ? order.status.toLowerCase() : '';
+                    const paymentStatus = order.paymentStatus ? order.paymentStatus.toLowerCase() : '';
+                    
+                    return status === 'delivered' || order.isPaid === true || paymentStatus === 'paid';
+                });
+
+                // Calculate Math
+                let totalSales = 0;
+                paidOrders.forEach(o => {
+                    totalSales += (o.totalAmount || o.totalPrice || o.amount || 0);
+                });
+
+                const deductionPercentage = 0.15; // 15% Platform Commission
+                const deductions = totalSales * deductionPercentage;
+                const netEarnings = totalSales - deductions;
+
+                // Update UI Cards
+                document.getElementById('totalSalesEl').innerText = `₹${totalSales.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById('deductionsEl').innerText = `- ₹${deductions.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById('netEarningsEl').innerText = `₹${netEarnings.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById('paidCountEl').innerText = paidOrders.length;
+
+                // Render Table
+                renderPayoutTable(paidOrders);
+
+            } catch (err) {
+                console.error("Error calculating finances:", err);
+                document.getElementById('payoutTableBody').innerHTML = `
+                    <tr><td colspan="6" style="text-align: center; color: var(--danger);">Failed to calculate finances. Server error.</td></tr>
+                `;
+            }
+        }
+
+        function renderPayoutTable(orders) {
+            const tbody = document.getElementById('payoutTableBody');
+            tbody.innerHTML = "";
+
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No completed transactions yet.</td></tr>`;
+                return;
+            }
+
+            // Naye orders pehle dikhane ke liye sort karna
+            orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            orders.forEach(order => {
+                const dateObj = new Date(order.createdAt || Date.now());
+                const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const timeString = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                // Generation fake TXN ID
+                const orderIdStr = order._id || '000000';
+                const shortId = orderIdStr.substring(orderIdStr.length - 4).toUpperCase();
+                const txnId = `TXN-${orderIdStr.substring(orderIdStr.length - 8).toUpperCase()}`;
+                
+                const amount = order.totalAmount || order.totalPrice || order.amount || 0;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="trx-id">${txnId}</span></td>
+                    <td class="trx-cycle">Order #HB-${shortId}</td>
+                    <td class="trx-date">${dateString} • ${timeString}</td>
+                    <td class="trx-amount">₹${amount.toFixed(2)}</td>
+                    <td><span class="status-badge paid">Paid</span></td>
+                    <td><button class="btn-invoice" onclick="alert('Receipt downloading for Order #HB-${shortId}')"><i class="fas fa-file-pdf"></i> Receipt</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // On Page Load
+        window.onload = fetchFinances;
+
     </script>
 </body>
 </html>
