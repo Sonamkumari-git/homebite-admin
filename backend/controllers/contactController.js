@@ -1,14 +1,16 @@
-const Contact = require('../models/Contact'); // Apne contact model ka path check kar lena
+const express = require('express');
+const router = express.Router();
+const Contact = require('../models/contactModel');
 
-// GET Controller: Database se data nikal kar frontend ko dene ke liye
-const getContacts = async (req, res) => {
+// GET Route: Database se saare messages live nikalne ke liye
+router.get('/', async (req, res) => {
     try {
-        // Database se saare messages nikalega aur naye messages ko pehle dikhayega (-1 sort)
+        // Naye messages sabse upar dikhane ke liye sort({ createdAt: -1 }) kiya hai
         const messages = await Contact.find().sort({ createdAt: -1 });
         res.status(200).json(messages);
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(500).json({ message: "Error fetching messages", error: error.message });
     }
-};
+});
 
-module.exports = { getContacts };
+module.exports = router;
