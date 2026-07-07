@@ -357,8 +357,8 @@
             }
 
             try {
-                // Aapka existing GET API route call kar rahe hain
-                const res = await fetch('http://localhost:5000/api/orders/all-orders', {
+                // 🔥 FIX: Localhost se hata kar production Render URL laga diya hai
+                const res = await fetch('https://homebite-admin.onrender.com/api/orders/all-orders', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
