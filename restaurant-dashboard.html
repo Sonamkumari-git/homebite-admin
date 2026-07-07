@@ -143,7 +143,7 @@
         .table-header h3 { font-size: 1.2rem; font-family: 'Poppins', sans-serif; }
         
         .table-responsive { overflow-x: auto; padding: 0 25px 25px 25px; }
-        table { width: 100%; border-collapse: collapse; min-width: 700px; /* Forces scroll on mobile */ }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
         th { color: var(--text-muted); font-weight: 500; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; padding-top: 20px; }
         tr:hover td { background: rgba(255,255,255,0.02); }
@@ -151,12 +151,13 @@
         .status { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
         .status.pending { background: rgba(244, 193, 80, 0.1); color: var(--secondary-color); border: 1px solid rgba(244, 193, 80, 0.2); }
         .status.preparing { background: rgba(226, 135, 67, 0.1); color: var(--primary-color); border: 1px solid rgba(226, 135, 67, 0.2); }
-        .status.completed { background: rgba(46, 213, 115, 0.1); color: var(--success); border: 1px solid rgba(46, 213, 115, 0.2); }
+        .status.completed, .status.delivered { background: rgba(46, 213, 115, 0.1); color: var(--success); border: 1px solid rgba(46, 213, 115, 0.2); }
+        .status.cancelled { background: rgba(255, 71, 87, 0.1); color: var(--danger); border: 1px solid rgba(255, 71, 87, 0.2); }
 
         .btn-action { padding: 8px 15px; border-radius: 4px; border: none; font-size: 0.8rem; cursor: pointer; transition: 0.3s; font-weight: 500; white-space: nowrap; }
-        .btn-accept { background: var(--primary-color); color: #fff; }
+        .btn-accept { background: var(--primary-color); color: #fff; text-decoration: none;}
         .btn-accept:hover { background: #c97130; }
-        .btn-reject { background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); margin-left: 5px; }
+        .btn-reject { background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); margin-left: 5px; text-decoration: none;}
         .btn-reject:hover { background: rgba(255,71,87,0.1); color: var(--danger); border-color: var(--danger); }
         
         /* Message Specific buttons */
@@ -206,14 +207,14 @@
             <i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i>
         </div>
         <div class="nav-menu">
-            <a href="/restaurant-dashboard" class="nav-item active"><i class="fas fa-chart-pie"></i> Dashboard</a>
-            <a href="/live-orders" class="nav-item"><i class="fas fa-bell"></i> Live Orders</a>
-            <a href="/menu" class="nav-item"><i class="fas fa-utensils"></i> Menu Management</a>
-            <a href="/messages" class="nav-item"><i class="fas fa-envelope"></i> Messages <span style="background: var(--primary-color); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: auto;">New</span></a>
-            <a href="/history" class="nav-item"><i class="fas fa-history"></i> Order History</a>
-            <a href="/finances" class="nav-item"><i class="fas fa-wallet"></i> Finances</a>
-            <a href="/settings" class="nav-item"><i class="fas fa-cog"></i> Settings</a>
-            <a href="/login" class="nav-item" style="margin-top: auto; color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="restaurant-dashboard.html" class="nav-item active"><i class="fas fa-chart-pie"></i> Dashboard</a>
+            <a href="live-orders.html" class="nav-item"><i class="fas fa-bell"></i> Live Orders</a>
+            <a href="menu.html" class="nav-item"><i class="fas fa-utensils"></i> Menu Management</a>
+            <a href="messages.html" class="nav-item"><i class="fas fa-envelope"></i> Messages <span style="background: var(--primary-color); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: auto;">New</span></a>
+            <a href="history.html" class="nav-item"><i class="fas fa-history"></i> Order History</a>
+            <a href="finances.html" class="nav-item"><i class="fas fa-wallet"></i> Finances</a>
+            <a href="settings.html" class="nav-item"><i class="fas fa-cog"></i> Settings</a>
+            <a href="login.html" class="nav-item" style="margin-top: auto; color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </aside>
 
@@ -237,7 +238,7 @@
                 </div>
                 <div class="notification">
                     <i class="fas fa-bell"></i>
-                    <span class="badge">4</span>
+                    <span class="badge" id="notifBadge">0</span>
                 </div>
                 <div class="profile">
                     <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80" alt="Logo">
@@ -253,14 +254,14 @@
                     <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
                     <div class="stat-info">
                         <p>Today's Revenue</p>
-                        <h3>₹12,450</h3>
+                        <h3 id="todayRevenue">₹0</h3>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
                     <div class="stat-info">
-                        <p>Total Orders</p>
-                        <h3>48</h3>
+                        <p>Total Orders (All Time)</p>
+                        <h3 id="totalOrders">0</h3>
                     </div>
                 </div>
                 <div class="stat-card">
@@ -275,9 +276,8 @@
             <div class="table-wrapper">
                 <div class="table-header">
                     <h3>Recent Orders</h3>
-                    <button class="btn-action btn-accept">View All Live Orders</button>
+                    <a href="live-orders.html" class="btn-action btn-accept">View All Live Orders</a>
                 </div>
-                
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -290,26 +290,8 @@
                                 <th>Action</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>#HB-4091</td>
-                                <td>Rahul Kumar</td>
-                                <td>1x Chicken Biryani, 2x Naan</td>
-                                <td>₹450</td>
-                                <td><span class="status pending">New Order</span></td>
-                                <td>
-                                    <button class="btn-action btn-accept">Accept</button>
-                                    <button class="btn-action btn-reject">Reject</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>#HB-4090</td>
-                                <td>Priya Singh</td>
-                                <td>2x Truffle Pasta</td>
-                                <td>₹1700</td>
-                                <td><span class="status preparing">Preparing</span></td>
-                                <td><button class="btn-action btn-accept" style="background:#2ed573;">Mark Ready</button></td>
-                            </tr>
+                        <tbody id="recentOrdersTableBody">
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading recent orders...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -318,9 +300,8 @@
             <div class="table-wrapper">
                 <div class="table-header">
                     <h3>Customer Messages & Queries</h3>
-                    <button class="btn-action btn-reject">View All Messages</button>
+                    <a href="messages.html" class="btn-action btn-reject">View All Messages</a>
                 </div>
-                
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -333,29 +314,8 @@
                                 <th>Action</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td style="color: var(--text-muted);">Jul 4, 2026</td>
-                                <td style="font-weight: 600; color: #fff;">gadha prasad</td>
-                                <td style="color: var(--primary-color);">bt23ma008@nitmz.ac.in</td>
-                                <td>khana khana hai yaar</td>
-                                <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">JLDI DO</td>
-                                <td>
-                                    <a href="mailto:bt23ma008@nitmz.ac.in"><button class="btn-action btn-reply"><i class="fas fa-reply"></i> Reply</button></a>
-                                    <button class="btn-action btn-resolve"><i class="fas fa-check"></i> Resolve</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="color: var(--text-muted);">Jul 3, 2026</td>
-                                <td style="font-weight: 600; color: #fff;">Simran Kaur</td>
-                                <td style="color: var(--primary-color);">simran.k@example.com</td>
-                                <td>Missing item in order #HB-4012</td>
-                                <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Hi, I ordered a meal combo but the drink was missing.</td>
-                                <td>
-                                    <a href="mailto:simran.k@example.com"><button class="btn-action btn-reply"><i class="fas fa-reply"></i> Reply</button></a>
-                                    <button class="btn-action btn-resolve"><i class="fas fa-check"></i> Resolve</button>
-                                </td>
-                            </tr>
+                        <tbody id="recentMessagesTableBody">
+                            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading recent messages...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -374,7 +334,7 @@
             overlay.classList.toggle('show');
         }
 
-        // 2. Open/Close Restaurant Toggle Status Logic
+        // 2. Open/Close Restaurant Toggle
         function toggleRestaurantStatus() {
             const toggle = document.getElementById('restStatusToggle');
             const statusText = document.getElementById('restStatusText');
@@ -387,6 +347,141 @@
                 statusText.style.color = "var(--danger)";
             }
         }
+
+        // === FETCH LIVE DATA LOGIC ===
+
+        const BASE_URL = 'https://homebite-admin.onrender.com';
+
+        async function loadDashboardData() {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                // Fetch Orders and Contacts simultaneously for faster loading
+                const [ordersRes, contactsRes] = await Promise.all([
+                    fetch(`${BASE_URL}/api/orders/all-orders`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                    fetch(`${BASE_URL}/api/contacts`, { headers: { 'Authorization': `Bearer ${token}` } })
+                ]);
+
+                if (ordersRes.ok) {
+                    const allOrders = await ordersRes.json();
+                    renderOrdersData(allOrders);
+                }
+
+                if (contactsRes.ok) {
+                    const allContacts = await contactsRes.json();
+                    renderContactsData(allContacts);
+                }
+
+            } catch (err) {
+                console.error("Dashboard fetch error:", err);
+            }
+        }
+
+        function renderOrdersData(orders) {
+            // Stats Calculations
+            document.getElementById('totalOrders').innerText = orders.length;
+
+            // Today's Revenue Calculation
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            let todayRevenue = 0;
+            orders.forEach(order => {
+                const orderDate = new Date(order.createdAt);
+                const isToday = orderDate >= today;
+                const status = (order.status || '').toLowerCase();
+                const isPaid = order.isPaid || (order.paymentStatus || '').toLowerCase() === 'paid';
+
+                if (isToday && (status === 'delivered' || isPaid)) {
+                    todayRevenue += (order.totalAmount || order.totalPrice || order.amount || 0);
+                }
+            });
+            document.getElementById('todayRevenue').innerText = `₹${todayRevenue.toLocaleString('en-IN')}`;
+
+            // Recent Orders Table (Top 5)
+            const tbody = document.getElementById('recentOrdersTableBody');
+            tbody.innerHTML = '';
+            
+            const recentOrders = orders.slice(0, 5); // Pick top 5
+            
+            if (recentOrders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No orders found.</td></tr>`;
+                return;
+            }
+
+            recentOrders.forEach(order => {
+                const orderIdStr = order._id || '000000';
+                const shortId = orderIdStr.length > 10 ? orderIdStr.substring(orderIdStr.length - 4).toUpperCase() : orderIdStr;
+                
+                const customerName = order.name || order.customerName || (order.user && order.user.name) || 'Guest';
+                const amount = order.totalAmount || order.totalPrice || order.amount || 0;
+                
+                let itemsText = "No items";
+                if(order.items && order.items.length > 0) {
+                    itemsText = order.items.map(i => `${i.quantity}x ${i.name}`).join(', ');
+                }
+
+                let statusClass = 'pending';
+                const sLow = (order.status || '').toLowerCase();
+                if (sLow === 'preparing') statusClass = 'preparing';
+                else if (sLow === 'delivered' || sLow === 'completed') statusClass = 'completed';
+                else if (sLow === 'cancelled' || sLow === 'rejected') statusClass = 'cancelled';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span style="font-weight: 600; color: #fff;">#HB-${shortId}</span></td>
+                    <td style="color: var(--secondary-color); font-weight: 500;">${customerName}</td>
+                    <td style="color: #ccc; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${itemsText}">${itemsText}</td>
+                    <td style="font-weight: 600; color: #fff;">₹${amount}</td>
+                    <td><span class="status ${statusClass}">${order.status || 'Pending'}</span></td>
+                    <td>
+                        <a href="live-orders.html"><button class="btn-action btn-accept" style="padding: 5px 10px; font-size: 0.75rem;">View in Live</button></a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderContactsData(messages) {
+            const tbody = document.getElementById('recentMessagesTableBody');
+            tbody.innerHTML = '';
+            
+            // Set unread notification badge (Mock logic: Assuming unread if no isResolved flag)
+            let unreadCount = messages.filter(m => !m.isResolved && m.status !== 'resolved').length;
+            document.getElementById('notifBadge').innerText = unreadCount + 2; // +2 for live order mock notifications
+
+            const recentMessages = messages.slice(0, 5); // Pick top 5
+
+            if (recentMessages.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No messages found.</td></tr>`;
+                return;
+            }
+
+            recentMessages.forEach(msg => {
+                const dateObj = new Date(msg.createdAt || Date.now());
+                const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="color: var(--text-muted);">${dateString}</td>
+                    <td style="font-weight: 600; color: #fff;">${msg.name || 'Anonymous'}</td>
+                    <td style="color: var(--primary-color);">${msg.email || 'N/A'}</td>
+                    <td>${msg.subject || 'Customer Query'}</td>
+                    <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ccc;" title="${msg.message || msg.query}">${msg.message || msg.query || ''}</td>
+                    <td>
+                        <a href="mailto:${msg.email || ''}"><button class="btn-action btn-reply"><i class="fas fa-reply"></i> Reply</button></a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.onload = loadDashboardData;
+
     </script>
 </body>
 </html>
