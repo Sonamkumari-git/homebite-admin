@@ -219,7 +219,7 @@
                     msgDiv.innerText = "Login Successful! Redirecting...";
                     msgDiv.style.display = 'block';
 
-                    // Save token in LocalStorage for route protection
+                    // 🔥 Token ko secure tarike se LocalStorage me 'adminToken' ke naam se save kar diya
                     localStorage.setItem('adminToken', data.token);
 
                     // Redirect to dashboard after 1.5 seconds
@@ -228,7 +228,7 @@
                     }, 1500);
                 } else {
                     msgDiv.className = 'error';
-                    msgDiv.innerText = data.message;
+                    msgDiv.innerText = data.message || "Invalid email or password.";
                     msgDiv.style.display = 'block';
                 }
             } catch (error) {
