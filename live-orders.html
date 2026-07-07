@@ -404,21 +404,26 @@
 
                 const orderIdDisplay = order.orderId || (order._id ? `#HB-${order._id.slice(-4).toUpperCase()}` : '#HB-0000');
                 
-                // NEW LOGIC FOR CUSTOMER DATA (Name, Phone, Address, Payment)
+                // --- FIX 1: PHONE NUMBER ---
+                // Added "order.customerPhone" primarily, as saved in your MongoDB
                 const customerName = order.customerName || (order.user && order.user.name) || (order.shippingAddress && order.shippingAddress.name) || 'Guest Customer';
-                const customerPhone = order.phone || order.phoneNo || (order.user && order.user.phone) || (order.shippingAddress && order.shippingAddress.phoneNo) || 'N/A';
+                const customerPhone = order.customerPhone || order.phone || order.phoneNo || (order.user && order.user.phone) || (order.shippingAddress && order.shippingAddress.phoneNo) || 'N/A';
                 
                 const addrObj = order.shippingAddress || {};
                 const customerAddress = order.address || [addrObj.address, addrObj.city, addrObj.postalCode].filter(Boolean).join(', ') || 'No Address Provided';
 
-                // Payment Status checking (Online vs Cash)
-                const paymentMethod = order.paymentMethod || (order.paymentInfo && order.paymentInfo.method) || 'Cash';
-                let isPaidStatus = 'Cash on Delivery (COD)';
+                // --- FIX 2: PAYMENT STATUS ---
+                // Strict check to ONLY show "COD" or "Online Payment", ignoring "pending" from database for display
+                const paymentMethod = (order.paymentMethod || (order.paymentInfo && order.paymentInfo.method) || '').toLowerCase();
+                let isPaidStatus = 'COD';
                 let paymentColor = 'var(--secondary-color)'; // Yellowish for COD
                 
-                if (order.isPaid || paymentMethod.toLowerCase() === 'online' || paymentMethod.toLowerCase() === 'card' || paymentMethod.toLowerCase() === 'upi') {
-                    isPaidStatus = `Paid Online (${paymentMethod})`;
+                if (order.isPaid || paymentMethod === 'online' || paymentMethod === 'card' || paymentMethod === 'upi') {
+                    isPaidStatus = 'Online Payment';
                     paymentColor = 'var(--info)'; // Blueish for Paid
+                } else {
+                    isPaidStatus = 'COD';
+                    paymentColor = 'var(--secondary-color)';
                 }
 
                 const timeAgoText = formatTimeAgo(order.createdAt || order.date);
