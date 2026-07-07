@@ -157,21 +157,25 @@
         .table-wrapper { background: var(--card-bg); border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); overflow: hidden; }
         .table-responsive { overflow-x: auto; padding: 0 25px 10px 25px; }
         
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; } /* Increased min-width for new columns */
         th, td { padding: 18px 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
         th { color: var(--text-muted); font-weight: 500; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; padding-top: 25px; }
         tr:hover td { background: rgba(255,255,255,0.02); }
         
         .order-id { font-weight: 600; color: #fff; }
         .date-time { font-size: 0.85rem; color: var(--text-muted); display: block; margin-top: 4px; }
-        .customer-name { font-weight: 500; color: var(--secondary-color); }
-        .item-list { font-size: 0.85rem; color: #ccc; line-height: 1.5; max-width: 250px; }
+        
+        /* New Customer Info Styles */
+        .customer-info .customer-name { font-weight: 500; color: var(--secondary-color); }
+        .customer-info .customer-phone { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 5px; }
+        .delivery-address { font-size: 0.85rem; color: #ccc; max-width: 220px; line-height: 1.4; word-wrap: break-word; }
+        
+        .item-list { font-size: 0.85rem; color: #ccc; line-height: 1.5; max-width: 200px; }
         .amount { font-weight: 600; color: #fff; }
 
         .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; text-align: center; }
         .status-badge.delivered { background: rgba(46, 213, 115, 0.1); color: var(--success); border: 1px solid rgba(46, 213, 115, 0.2); }
         .status-badge.cancelled { background: rgba(255, 71, 87, 0.1); color: var(--danger); border: 1px solid rgba(255, 71, 87, 0.2); }
-        /* Add styling for rejected if needed */
         .status-badge.rejected { background: rgba(255, 71, 87, 0.1); color: var(--danger); border: 1px solid rgba(255, 71, 87, 0.2); }
 
         .btn-details { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px 15px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; transition: 0.3s; font-weight: 500; }
@@ -292,7 +296,8 @@
                         <thead>
                             <tr>
                                 <th>Order Details</th>
-                                <th>Customer</th>
+                                <th>Customer Info</th>
+                                <th>Delivery Address</th>
                                 <th>Items Ordered</th>
                                 <th>Amount</th>
                                 <th>Status</th>
@@ -301,7 +306,7 @@
                         </thead>
                         <tbody id="historyTableBody">
                             <tr>
-                                <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">Loading history...</td>
+                                <td colspan="7" style="text-align: center; padding: 20px; color: var(--text-muted);">Loading history...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -378,7 +383,7 @@
             } catch (err) {
                 console.error("Error fetching history:", err);
                 document.getElementById('historyTableBody').innerHTML = `
-                    <tr><td colspan="6" style="text-align: center; color: var(--danger);">Failed to load data. Make sure backend is running.</td></tr>
+                    <tr><td colspan="7" style="text-align: center; color: var(--danger);">Failed to load data. Make sure backend is running.</td></tr>
                 `;
             }
         }
@@ -391,7 +396,7 @@
             document.getElementById('pageInfo').innerText = `Showing ${dataToRender.length} Orders`;
 
             if (dataToRender.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No history found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No history found.</td></tr>`;
                 return;
             }
 
@@ -400,6 +405,19 @@
                 const dateObj = new Date(order.createdAt);
                 const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 const timeString = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                // Safely extract name, phone & address (Handles multiple possible JSON structures)
+                const name = (order.user && order.user.name) || (order.user && order.user.email) || 'Guest';
+                const phone = order.phone || (order.user && order.user.phone) || (order.shippingAddress && order.shippingAddress.phone) || 'Not Provided';
+                
+                let address = 'Not Provided';
+                if (order.address && typeof order.address === 'string') {
+                    address = order.address;
+                } else if (order.shippingAddress) {
+                    address = typeof order.shippingAddress === 'string' 
+                        ? order.shippingAddress 
+                        : `${order.shippingAddress.street || ''} ${order.shippingAddress.city || ''} ${order.shippingAddress.zipCode || ''}`.trim() || 'Not Provided';
+                }
 
                 // Items text banana
                 let itemsText = "No items";
@@ -417,9 +435,15 @@
                         <span class="order-id">#HB-${order._id.substring(order._id.length - 4).toUpperCase()}</span>
                         <span class="date-time">${dateString} • ${timeString}</span>
                     </td>
-                    <td class="customer-name">${order.user.name || order.user.email || 'Guest'}</td>
+                    <td class="customer-info">
+                        <div class="customer-name">${name}</div>
+                        <div class="customer-phone"><i class="fas fa-phone-alt" style="font-size: 10px;"></i> ${phone}</div>
+                    </td>
                     <td>
-                        <div class="item-list" title="${itemsText}">${itemsText.length > 50 ? itemsText.substring(0, 50) + '...' : itemsText}</div>
+                        <div class="delivery-address" title="${address}">${address.length > 40 ? address.substring(0, 40) + '...' : address}</div>
+                    </td>
+                    <td>
+                        <div class="item-list" title="${itemsText}">${itemsText.length > 40 ? itemsText.substring(0, 40) + '...' : itemsText}</div>
                     </td>
                     <td class="amount">₹${order.totalAmount || 0}</td>
                     <td><span class="status-badge ${statusClass}">${order.status}</span></td>
@@ -434,7 +458,8 @@
             const term = e.target.value.toLowerCase();
             const filtered = allHistoryOrders.filter(o => 
                 o._id.toLowerCase().includes(term) || 
-                (o.user.name && o.user.name.toLowerCase().includes(term))
+                (o.user && o.user.name && o.user.name.toLowerCase().includes(term)) ||
+                (o.phone && o.phone.includes(term)) // Can search by phone number too now
             );
             renderHistoryTable(filtered);
         });
