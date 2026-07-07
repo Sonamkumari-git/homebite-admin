@@ -20,7 +20,7 @@ const updateOrderStatus = async (req, res) => {
         const updatedOrder = await Order.findByIdAndUpdate(
             id,
             { status: status },
-            { new: true } // Taki updated order return ho
+            { returnDocument: 'after' } // 🔥 FIX: Warning hatane ke liye 'returnDocument' use kiya
         );
 
         if (!updatedOrder) {
