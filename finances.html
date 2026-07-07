@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HomeBite | Finances & Payouts</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght=0,500;0,700;0,800;1,600&family=Poppins:wght=300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -170,7 +170,7 @@
         .table-header h3 { font-size: 1.2rem; font-family: 'Poppins', sans-serif; }
         
         .table-responsive { overflow-x: auto; padding: 0 25px 15px 25px; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
         th, td { padding: 18px 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
         th { color: var(--text-muted); font-weight: 500; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; padding-top: 25px; }
         tr:hover td { background: rgba(255,255,255,0.02); }
@@ -327,6 +327,7 @@
                             <tr>
                                 <th>Transaction ID</th>
                                 <th>Order Ref</th>
+                                <th>Customer</th>
                                 <th>Processed Date</th>
                                 <th>Amount</th>
                                 <th>Status</th>
@@ -335,7 +336,7 @@
                         </thead>
                         <tbody id="payoutTableBody">
                             <tr>
-                                <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                                <td colspan="7" style="text-align: center; padding: 20px; color: var(--text-muted);">
                                     <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px;"></i>
                                     <br>Calculating live finances...
                                 </td>
@@ -417,7 +418,7 @@
             } catch (err) {
                 console.error("Error calculating finances:", err);
                 document.getElementById('payoutTableBody').innerHTML = `
-                    <tr><td colspan="6" style="text-align: center; color: var(--danger);">Failed to calculate finances. Server error.</td></tr>
+                    <tr><td colspan="7" style="text-align: center; color: var(--danger);">Failed to calculate finances. Server error.</td></tr>
                 `;
             }
         }
@@ -427,7 +428,7 @@
             tbody.innerHTML = "";
 
             if (orders.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No completed transactions yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No completed transactions yet.</td></tr>`;
                 return;
             }
 
@@ -439,21 +440,51 @@
                 const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 const timeString = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-                // Generation fake TXN ID
-                const orderIdStr = order._id || '000000';
-                const shortId = orderIdStr.substring(orderIdStr.length - 4).toUpperCase();
-                const txnId = `TXN-${orderIdStr.substring(orderIdStr.length - 8).toUpperCase()}`;
+                // 1. SAFE ORDER ID EXTRACTION
+                let displayOrderId = 'N/A';
+                const rawOrderId = order.orderId || order.orderNumber || order._id;
+                if (rawOrderId) {
+                    const strId = rawOrderId.toString();
+                    // Agar short user-friendly ID pehle se hai to wahi dikhaye, nahi to mongo ID ka short snippet format kare
+                    displayOrderId = strId.length > 10 ? `#HB-${strId.substring(strId.length - 6).toUpperCase()}` : `#HB-${strId}`;
+                }
+
+                // 2. TRANSACTION ID OR CASH FALLBACK
+                let txnId = order.transactionId || order.paymentId || order.paymentIntentId;
+                if (!txnId) {
+                    const payMethod = (order.paymentMethod || '').toLowerCase();
+                    txnId = (payMethod === 'cod' || payMethod === 'cash') ? 'CASH' : 'N/A';
+                }
                 
+                // 3. CUSTOMER NAME & PHONE EXTRACTION
+                let customerName = 'Unknown';
+                let customerPhone = 'N/A';
+                
+                if (order.user) {
+                    customerName = order.user.name || order.user.username || customerName;
+                    customerPhone = order.user.phone || order.user.phoneNumber || customerPhone;
+                } else if (order.address) {
+                    customerName = order.address.name || customerName;
+                    customerPhone = order.address.phone || customerPhone;
+                }
+                // Check direct object fallbacks if available
+                customerName = order.customerName || order.name || customerName;
+                customerPhone = order.customerPhone || order.phone || customerPhone;
+
                 const amount = order.totalAmount || order.totalPrice || order.amount || 0;
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><span class="trx-id">${txnId}</span></td>
-                    <td class="trx-cycle">Order #HB-${shortId}</td>
+                    <td class="trx-cycle">${displayOrderId}</td>
+                    <td>
+                        <div style="font-weight: 500; color: #fff;">${customerName}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${customerPhone}</div>
+                    </td>
                     <td class="trx-date">${dateString} • ${timeString}</td>
                     <td class="trx-amount">₹${amount.toFixed(2)}</td>
                     <td><span class="status-badge paid">Paid</span></td>
-                    <td><button class="btn-invoice" onclick="alert('Receipt downloading for Order #HB-${shortId}')"><i class="fas fa-file-pdf"></i> Receipt</button></td>
+                    <td><button class="btn-invoice" onclick="alert('Receipt downloading for ${displayOrderId}')"><i class="fas fa-file-pdf"></i> Receipt</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -461,7 +492,6 @@
 
         // On Page Load
         window.onload = fetchFinances;
-
     </script>
 </body>
 </html>
