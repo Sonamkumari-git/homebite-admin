@@ -18,7 +18,7 @@
             --sidebar-bg: #020202;
             --card-bg: #151515;
             --text-light: #ffffff;
-            --text-muted: #a0a0a0;
+            --text-muted: #a00a0a0;
             --danger: #ff4757;
             --success: #2ed573;
             --info: #00d2d3;
@@ -320,13 +320,19 @@
     </main>
 
     <script>
+        // Global variables to track state safely
+        let previousNewOrderCount = 0;
+        let isFirstLoad = true;
+
         // Mobile Sidebar Toggle Logic
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobileOverlay');
             
-            sidebar.classList.toggle('show');
-            overlay.classList.toggle('show');
+            if(sidebar && overlay) {
+                sidebar.classList.toggle('show');
+                overlay.classList.toggle('show');
+            }
         }
 
         // Open/Close Restaurant Toggle Status Logic
@@ -334,6 +340,8 @@
             const toggle = document.getElementById('restStatusToggle');
             const statusText = document.getElementById('restStatusText');
             
+            if(!toggle || !statusText) return;
+
             if(toggle.checked) {
                 statusText.innerText = "Accepting Orders";
                 statusText.style.color = "var(--text-light)";
@@ -344,24 +352,51 @@
         }
 
         // --- BACKEND API DYNAMIC INTEGRATION ENGINE ---
-        // Yahan aapke main website ka backend aayega kyunki database wahan hai
         const BASE_URL = "https://homebite-admin.onrender.com";
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchLiveOrders();
-            // Har 10 second me page data automatically refresh karega taaki naye orders dikh jayein
+            // Automatically poll every 10 seconds for real-time sync
             setInterval(fetchLiveOrders, 10000);
         });
 
+        // Web Audio API Sound Generator (No external file needed, full browser compatibility)
+        function playNotificationSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                
+                // Double Beep Tone Configuration
+                const playBeep = (startTime, frequency, duration) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = frequency;
+                    
+                    gain.gain.setValueAtTime(0.15, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(startTime);
+                    osc.stop(startTime + duration);
+                };
+
+                playBeep(ctx.currentTime, 587.33, 0.15); // D5 Note
+                playBeep(ctx.currentTime + 0.2, 880, 0.25); // A5 Note
+            } catch (e) {
+                console.log("Audio play blocked or unsupported:", e);
+            }
+        }
+
         // Database se orders laane ka function
         async function fetchLiveOrders() {
-            // Admin Token auth ke liye
             const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || localStorage.getItem('adminToken') || "";
             const headers = { "Content-Type": "application/json" };
             if (token) headers["Authorization"] = `Bearer ${token}`;
 
             try {
-                // Admin wale route '/all-orders' ko call kar rahe hain
                 const response = await fetch(`${BASE_URL}/api/orders/all-orders`, {
                     method: "GET",
                     headers: headers
@@ -370,10 +405,9 @@
                 if (!response.ok) throw new Error("API Response Error");
 
                 const data = await response.json();
-                
                 const orders = Array.isArray(data) ? data : (data.orders || data.data || []);
 
-                // Latest orders upar dikhane ke liye sort
+                // Sort securely: latest orders first
                 orders.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
 
                 renderKanbanBoard(orders);
@@ -388,7 +422,9 @@
             const preparingContainer = document.getElementById('preparing-orders-container');
             const readyContainer = document.getElementById('ready-orders-container');
 
-            // Purane display clear karo taki duplicate na bane
+            if (!newContainer || !preparingContainer || !readyContainer) return;
+
+            // Clear containers to prevent duplication duplication
             newContainer.innerHTML = '';
             preparingContainer.innerHTML = '';
             readyContainer.innerHTML = '';
@@ -398,12 +434,16 @@
             let countReady = 0;
 
             orders.forEach(order => {
+                if (!order) return;
+                
                 const status = (order.status || order.orderStatus || 'Placed').toLowerCase();
                 
-                // Order me kya-kya manga gaya hai
+                // Safe parsing for items array
                 let itemsHtml = '';
-                const items = order.orderItems || order.items || [];
+                const items = Array.isArray(order.orderItems) ? order.orderItems : (Array.isArray(order.items) ? order.items : []);
+                
                 items.forEach(item => {
+                    if (!item) return;
                     const qty = item.qty || item.quantity || 1;
                     const name = item.name || (item.product ? item.product.name : 'Food Item');
                     itemsHtml += `
@@ -413,7 +453,9 @@
                     `;
                 });
 
-                const orderIdDisplay = order.orderId || (order._id ? `#HB-${order._id.slice(-4).toUpperCase()}` : '#HB-0000');
+                // Safe fallback fallbacks for variables
+                const safeId = order._id || order.id || '';
+                const orderIdDisplay = order.orderId || (safeId ? `#HB-${String(safeId).slice(-4).toUpperCase()}` : '#HB-0000');
                 const customerName = order.customerName || (order.user && order.user.name) || (order.shippingAddress && order.shippingAddress.name) || 'Customer';
                 const totalAmount = order.totalPrice || order.totalAmount || 0;
                 const timeAgoText = formatTimeAgo(order.createdAt || order.date);
@@ -431,15 +473,15 @@
                                 <i class="fas fa-user"></i> ${customerName}
                             </div>
                             <div class="item-details">
-                                ${itemsHtml}
+                                ${itemsHtml || '<div class="item-row"><span>Standard Meal</span></div>'}
                             </div>
                             <div class="card-bottom">
                                 <span class="total-label">Total Amount:</span>
                                 <span class="total-price">₹${totalAmount}</span>
                             </div>
                             <div class="action-container">
-                                <button class="btn btn-accept" onclick="updateStatus('${order._id || order.id}', 'Preparing')">Accept</button>
-                                <button class="btn btn-reject" onclick="updateStatus('${order._id || order.id}', 'Cancelled')">Reject</button>
+                                <button class="btn btn-accept" onclick="updateStatus('${safeId}', 'Preparing')">Accept</button>
+                                <button class="btn btn-reject" onclick="updateStatus('${safeId}', 'Cancelled')">Reject</button>
                             </div>
                         </div>
                     `;
@@ -457,14 +499,14 @@
                                 <i class="fas fa-user"></i> ${customerName}
                             </div>
                             <div class="item-details">
-                                ${itemsHtml}
+                                ${itemsHtml || '<div class="item-row"><span>Standard Meal</span></div>'}
                             </div>
                             <div class="card-bottom">
                                 <span class="total-label">Total Amount:</span>
                                 <span class="total-price">₹${totalAmount}</span>
                             </div>
                             <div class="action-container">
-                                <button class="btn btn-ready" onclick="updateStatus('${order._id || order.id}', 'Ready')">Mark Food Ready</button>
+                                <button class="btn btn-ready" onclick="updateStatus('${safeId}', 'Ready')">Mark Food Ready</button>
                             </div>
                         </div>
                     `;
@@ -482,51 +524,63 @@
                                 <i class="fas fa-user"></i> ${customerName}
                             </div>
                             <div class="item-details">
-                                ${itemsHtml}
+                                ${itemsHtml || '<div class="item-row"><span>Standard Meal</span></div>'}
                             </div>
                             <div class="card-bottom">
                                 <span class="total-label">Total Amount:</span>
                                 <span class="total-price">₹${totalAmount}</span>
                             </div>
                             <div class="action-container">
-                                <button class="btn btn-dispatch" onclick="updateStatus('${order._id || order.id}', 'Delivered')">Handover to Rider</button>
+                                <button class="btn btn-dispatch" onclick="updateStatus('${safeId}', 'Delivered')">Handover to Rider</button>
                             </div>
                         </div>
                     `;
                 }
-                // Agar status Cancelled, Rejected, Delivered ya Out for delivery hai, 
-                // toh wo 'Live Orders' screen se gayab ho jayega (Order History me save rahega).
             });
 
-            // Headings ke paas Number (Count) update karna
+            // Update Counts in UI Headings
             const columns = document.querySelectorAll('.kanban-column');
             if (columns.length >= 3) {
                 columns[0].querySelector('.column-count').innerText = countNew;
                 columns[1].querySelector('.column-count').innerText = countPreparing;
                 columns[2].querySelector('.column-count').innerText = countReady;
             }
+
+            // Play Alert Sound when a new order drops
+            if (!isFirstLoad && countNew > previousNewOrderCount) {
+                playNotificationSound();
+            }
+            
+            // Sync counts for next interval check
+            previousNewOrderCount = countNew;
+            isFirstLoad = false;
         }
 
-        // DATABASE ME STATUS SAVE KARNE KA FUNCTION! (Jo aap chahte the)
+        // DATABASE ME STATUS SAVE KARNE KA FUNCTION! (Universal Payload System)
         async function updateStatus(orderId, newStatus) {
+            if (!orderId || orderId === 'undefined') {
+                alert("Invalid Order ID! Operation halted.");
+                return;
+            }
+
             const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || localStorage.getItem('adminToken') || "";
             
-            // UI me turant response dikhane ke liye aap chaho to button ko disabled kar sakte ho
-            
             try {
-                // Backend API ko POST/PUT request dekar Data save karwaya ja raha hai
+                // Sending redundant payloads to seamlessly support multiple controller variants
                 const response = await fetch(`${BASE_URL}/api/orders/${orderId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': token ? `Bearer ${token}` : ""
                     },
-                    body: JSON.stringify({ status: newStatus }) // Yahan naya status (Preparing/Ready/Delivered) bhej rahe hain
+                    body: JSON.stringify({ 
+                        status: newStatus,
+                        orderStatus: newStatus 
+                    })
                 });
                 
                 if (response.ok) {
-                    // SUCCESS! Status save ho gaya, ab turant table naye sire se fetch karo 
-                    // Taki card agle column me jump kar jaye
+                    // Success! Refetch instantly to make cards move smoothly
                     fetchLiveOrders(); 
                 } else {
                     alert("Failed to save status in database. Check your admin login!");
@@ -543,12 +597,16 @@
             const now = new Date();
             const past = new Date(dateString);
             const diffMs = now - past;
-            const diffMins = Math.floor(diffMs / 60000);
             
+            if (isNaN(past.getTime()) || diffMs < 0) return "Just Now";
+            
+            const diffMins = Math.floor(diffMs / 60000);
             if (diffMins < 1) return "Just Now";
             if (diffMins < 60) return `${diffMins} mins ago`;
+            
             const diffHours = Math.floor(diffMins / 60);
             if (diffHours < 24) return `${diffHours} hours ago`;
+            
             return past.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
     </script>
