@@ -18,7 +18,7 @@
             --sidebar-bg: #020202;
             --card-bg: #151515;
             --text-light: #ffffff;
-            --text-muted: #a00a0a0;
+            --text-muted: #a0a0a0;
             --danger: #ff4757;
             --success: #2ed573;
             --info: #00d2d3;
@@ -194,7 +194,7 @@
                 flex-direction: column; 
                 gap: 20px; 
                 height: auto; 
-                align-items: stretch; /* YAHI FIX THA: Isse cards pura width lenge */
+                align-items: stretch;
                 width: 100%;
             }
             .kanban-column { 
@@ -212,7 +212,7 @@
             .live-container { padding: 15px; }
             
             .kanban-column {
-                padding: 0; /* Extra dabba hatane ke liye */
+                padding: 0; 
                 background: transparent;
                 border: none;
             }
@@ -223,7 +223,7 @@
             
             .order-card { 
                 padding: 20px;
-                width: 100%; /* Ensure card takes full width */
+                width: 100%;
                 margin-bottom: 20px;
             }
         }
@@ -320,19 +320,13 @@
     </main>
 
     <script>
-        // Global variables to track state safely
-        let previousNewOrderCount = 0;
-        let isFirstLoad = true;
-
         // Mobile Sidebar Toggle Logic
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobileOverlay');
             
-            if(sidebar && overlay) {
-                sidebar.classList.toggle('show');
-                overlay.classList.toggle('show');
-            }
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
         }
 
         // Open/Close Restaurant Toggle Status Logic
@@ -340,8 +334,6 @@
             const toggle = document.getElementById('restStatusToggle');
             const statusText = document.getElementById('restStatusText');
             
-            if(!toggle || !statusText) return;
-
             if(toggle.checked) {
                 statusText.innerText = "Accepting Orders";
                 statusText.style.color = "var(--text-light)";
@@ -351,46 +343,13 @@
             }
         }
 
-        // --- BACKEND API DYNAMIC INTEGRATION ENGINE ---
         const BASE_URL = "https://homebite-admin.onrender.com";
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchLiveOrders();
-            // Automatically poll every 10 seconds for real-time sync
             setInterval(fetchLiveOrders, 10000);
         });
 
-        // Web Audio API Sound Generator (No external file needed, full browser compatibility)
-        function playNotificationSound() {
-            try {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (!AudioContext) return;
-                const ctx = new AudioContext();
-                
-                // Double Beep Tone Configuration
-                const playBeep = (startTime, frequency, duration) => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.value = frequency;
-                    
-                    gain.gain.setValueAtTime(0.15, startTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-                    
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(startTime);
-                    osc.stop(startTime + duration);
-                };
-
-                playBeep(ctx.currentTime, 587.33, 0.15); // D5 Note
-                playBeep(ctx.currentTime + 0.2, 880, 0.25); // A5 Note
-            } catch (e) {
-                console.log("Audio play blocked or unsupported:", e);
-            }
-        }
-
-        // Database se orders laane ka function
         async function fetchLiveOrders() {
             const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || localStorage.getItem('adminToken') || "";
             const headers = { "Content-Type": "application/json" };
@@ -407,7 +366,6 @@
                 const data = await response.json();
                 const orders = Array.isArray(data) ? data : (data.orders || data.data || []);
 
-                // Sort securely: latest orders first
                 orders.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
 
                 renderKanbanBoard(orders);
@@ -416,15 +374,11 @@
             }
         }
 
-        // Boards me Cards ko draw karne ka logic
         function renderKanbanBoard(orders) {
             const newContainer = document.getElementById('new-orders-container');
             const preparingContainer = document.getElementById('preparing-orders-container');
             const readyContainer = document.getElementById('ready-orders-container');
 
-            if (!newContainer || !preparingContainer || !readyContainer) return;
-
-            // Clear containers to prevent duplication duplication
             newContainer.innerHTML = '';
             preparingContainer.innerHTML = '';
             readyContainer.innerHTML = '';
@@ -434,16 +388,11 @@
             let countReady = 0;
 
             orders.forEach(order => {
-                if (!order) return;
-                
                 const status = (order.status || order.orderStatus || 'Placed').toLowerCase();
                 
-                // Safe parsing for items array
                 let itemsHtml = '';
-                const items = Array.isArray(order.orderItems) ? order.orderItems : (Array.isArray(order.items) ? order.items : []);
-                
+                const items = order.orderItems || order.items || [];
                 items.forEach(item => {
-                    if (!item) return;
                     const qty = item.qty || item.quantity || 1;
                     const name = item.name || (item.product ? item.product.name : 'Food Item');
                     itemsHtml += `
@@ -453,12 +402,45 @@
                     `;
                 });
 
-                // Safe fallback fallbacks for variables
-                const safeId = order._id || order.id || '';
-                const orderIdDisplay = order.orderId || (safeId ? `#HB-${String(safeId).slice(-4).toUpperCase()}` : '#HB-0000');
-                const customerName = order.customerName || (order.user && order.user.name) || (order.shippingAddress && order.shippingAddress.name) || 'Customer';
-                const totalAmount = order.totalPrice || order.totalAmount || 0;
+                const orderIdDisplay = order.orderId || (order._id ? `#HB-${order._id.slice(-4).toUpperCase()}` : '#HB-0000');
+                
+                // NEW LOGIC FOR CUSTOMER DATA (Name, Phone, Address, Payment)
+                const customerName = order.customerName || (order.user && order.user.name) || (order.shippingAddress && order.shippingAddress.name) || 'Guest Customer';
+                const customerPhone = order.phone || order.phoneNo || (order.user && order.user.phone) || (order.shippingAddress && order.shippingAddress.phoneNo) || 'N/A';
+                
+                const addrObj = order.shippingAddress || {};
+                const customerAddress = order.address || [addrObj.address, addrObj.city, addrObj.postalCode].filter(Boolean).join(', ') || 'No Address Provided';
+
+                // Payment Status checking (Online vs Cash)
+                const paymentMethod = order.paymentMethod || (order.paymentInfo && order.paymentInfo.method) || 'Cash';
+                let isPaidStatus = 'Cash on Delivery (COD)';
+                let paymentColor = 'var(--secondary-color)'; // Yellowish for COD
+                
+                if (order.isPaid || paymentMethod.toLowerCase() === 'online' || paymentMethod.toLowerCase() === 'card' || paymentMethod.toLowerCase() === 'upi') {
+                    isPaidStatus = `Paid Online (${paymentMethod})`;
+                    paymentColor = 'var(--info)'; // Blueish for Paid
+                }
+
                 const timeAgoText = formatTimeAgo(order.createdAt || order.date);
+                const totalAmount = order.totalPrice || order.totalAmount || 0;
+
+                // Reusable Customer Details HTML Block without changing CSS classes
+                const customerDetailsHtml = `
+                    <div class="customer-info" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                        <div style="font-weight: 500; font-size: 0.95rem; color: #fff;">
+                            <i class="fas fa-user"></i> ${customerName} 
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">
+                            <i class="fas fa-phone"></i> +91 ${customerPhone}
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
+                            <i class="fas fa-map-marker-alt"></i> ${customerAddress}
+                        </div>
+                        <div style="font-size: 0.85rem; font-weight: 600; color: ${paymentColor}; margin-top: 4px; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; width: 100%;">
+                            <i class="fas fa-wallet"></i> Payment: ${isPaidStatus}
+                        </div>
+                    </div>
+                `;
 
                 // COLUMN 1: NEW ORDERS
                 if (status === 'placed' || status === 'new' || status === 'pending') {
@@ -469,19 +451,19 @@
                                 <span class="order-id">${orderIdDisplay}</span>
                                 <span class="order-time">${timeAgoText}</span>
                             </div>
-                            <div class="customer-info">
-                                <i class="fas fa-user"></i> ${customerName}
-                            </div>
+                            
+                            ${customerDetailsHtml}
+                            
                             <div class="item-details">
-                                ${itemsHtml || '<div class="item-row"><span>Standard Meal</span></div>'}
+                                ${itemsHtml}
                             </div>
                             <div class="card-bottom">
                                 <span class="total-label">Total Amount:</span>
                                 <span class="total-price">₹${totalAmount}</span>
                             </div>
                             <div class="action-container">
-                                <button class="btn btn-accept" onclick="updateStatus('${safeId}', 'Preparing')">Accept</button>
-                                <button class="btn btn-reject" onclick="updateStatus('${safeId}', 'Cancelled')">Reject</button>
+                                <button class="btn btn-accept" onclick="updateStatus('${order._id || order.id}', 'Preparing')">Accept</button>
+                                <button class="btn btn-reject" onclick="updateStatus('${order._id || order.id}', 'Cancelled')">Reject</button>
                             </div>
                         </div>
                     `;
@@ -495,18 +477,18 @@
                                 <span class="order-id">${orderIdDisplay}</span>
                                 <span class="order-time" style="color: var(--secondary-color);"><i class="fas fa-clock"></i> In Kitchen</span>
                             </div>
-                            <div class="customer-info">
-                                <i class="fas fa-user"></i> ${customerName}
-                            </div>
+                            
+                            ${customerDetailsHtml}
+
                             <div class="item-details">
-                                ${itemsHtml || '<div class="item-row"><span>Standard Meal</span></div>'}
+                                ${itemsHtml}
                             </div>
                             <div class="card-bottom">
                                 <span class="total-label">Total Amount:</span>
                                 <span class="total-price">₹${totalAmount}</span>
                             </div>
                             <div class="action-container">
-                                <button class="btn btn-ready" onclick="updateStatus('${safeId}', 'Ready')">Mark Food Ready</button>
+                                <button class="btn btn-ready" onclick="updateStatus('${order._id || order.id}', 'Ready')">Mark Food Ready</button>
                             </div>
                         </div>
                     `;
@@ -520,67 +502,46 @@
                                 <span class="order-id">${orderIdDisplay}</span>
                                 <span class="order-time" style="color: var(--success);">Waiting for Rider</span>
                             </div>
-                            <div class="customer-info">
-                                <i class="fas fa-user"></i> ${customerName}
-                            </div>
+                            
+                            ${customerDetailsHtml}
+
                             <div class="item-details">
-                                ${itemsHtml || '<div class="item-row"><span>Standard Meal</span></div>'}
+                                ${itemsHtml}
                             </div>
                             <div class="card-bottom">
                                 <span class="total-label">Total Amount:</span>
                                 <span class="total-price">₹${totalAmount}</span>
                             </div>
                             <div class="action-container">
-                                <button class="btn btn-dispatch" onclick="updateStatus('${safeId}', 'Delivered')">Handover to Rider</button>
+                                <button class="btn btn-dispatch" onclick="updateStatus('${order._id || order.id}', 'Delivered')">Handover to Rider</button>
                             </div>
                         </div>
                     `;
                 }
             });
 
-            // Update Counts in UI Headings
             const columns = document.querySelectorAll('.kanban-column');
             if (columns.length >= 3) {
                 columns[0].querySelector('.column-count').innerText = countNew;
                 columns[1].querySelector('.column-count').innerText = countPreparing;
                 columns[2].querySelector('.column-count').innerText = countReady;
             }
-
-            // Play Alert Sound when a new order drops
-            if (!isFirstLoad && countNew > previousNewOrderCount) {
-                playNotificationSound();
-            }
-            
-            // Sync counts for next interval check
-            previousNewOrderCount = countNew;
-            isFirstLoad = false;
         }
 
-        // DATABASE ME STATUS SAVE KARNE KA FUNCTION! (Universal Payload System)
         async function updateStatus(orderId, newStatus) {
-            if (!orderId || orderId === 'undefined') {
-                alert("Invalid Order ID! Operation halted.");
-                return;
-            }
-
             const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || localStorage.getItem('adminToken') || "";
             
             try {
-                // Sending redundant payloads to seamlessly support multiple controller variants
                 const response = await fetch(`${BASE_URL}/api/orders/${orderId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': token ? `Bearer ${token}` : ""
                     },
-                    body: JSON.stringify({ 
-                        status: newStatus,
-                        orderStatus: newStatus 
-                    })
+                    body: JSON.stringify({ status: newStatus }) 
                 });
                 
                 if (response.ok) {
-                    // Success! Refetch instantly to make cards move smoothly
                     fetchLiveOrders(); 
                 } else {
                     alert("Failed to save status in database. Check your admin login!");
@@ -591,22 +552,17 @@
             }
         }
 
-        // Time format tool (Just Now, 5 mins ago)
         function formatTimeAgo(dateString) {
             if (!dateString) return "Just Now";
             const now = new Date();
             const past = new Date(dateString);
             const diffMs = now - past;
-            
-            if (isNaN(past.getTime()) || diffMs < 0) return "Just Now";
-            
             const diffMins = Math.floor(diffMs / 60000);
+            
             if (diffMins < 1) return "Just Now";
             if (diffMins < 60) return `${diffMins} mins ago`;
-            
             const diffHours = Math.floor(diffMins / 60);
             if (diffHours < 24) return `${diffHours} hours ago`;
-            
             return past.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
     </script>
