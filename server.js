@@ -42,13 +42,15 @@ app.get('/', (req, res) => {
 // Backend APIs Routes
 const menuRoutes = require('./backend/routes/menuRoutes');
 const adminRoutes = require('./backend/routes/adminRoutes');
-// 🔥 FIX 1: Orders route ko yahan import kiya
 const orderRoutes = require('./backend/routes/orderRoutes'); 
+// 🔥 FIX 3: Contact/Messages route ko yahan import kiya
+const contactRoutes = require('./backend/routes/contactRoutes'); 
 
 app.use('/api/menu', menuRoutes);
 app.use('/api/admin', adminRoutes);
-// 🔥 FIX 2: Orders route ko base path '/api/orders' ke saath connect kiya
 app.use('/api/orders', orderRoutes); 
+// 🔥 FIX 4: Contacts route ko base path '/api/contacts' ke saath connect kiya
+app.use('/api/contacts', contactRoutes); 
 
 // Server Start
 const PORT = process.env.PORT || 5000;
