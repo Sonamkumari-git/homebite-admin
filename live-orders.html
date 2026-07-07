@@ -388,6 +388,16 @@
             let countReady = 0;
 
             orders.forEach(order => {
+                // Online Pending Filter Logic (Rakha hai taki garbage data block ho, par baki sabka status clear dikhega)
+                const paymentMethod = (order.paymentMethod || (order.paymentInfo && order.paymentInfo.method) || 'cod').toLowerCase();
+                const paymentStatusRaw = (order.paymentStatus || (order.paymentInfo && order.paymentInfo.status) || (order.isPaid ? 'paid' : 'pending')).toLowerCase();
+                
+                const isOnlinePayment = paymentMethod === 'online' || paymentMethod === 'card' || paymentMethod === 'upi';
+                
+                if (isOnlinePayment && (paymentStatusRaw === 'pending' || paymentStatusRaw === 'failed')) {
+                    return; 
+                }
+
                 const status = (order.status || order.orderStatus || 'Placed').toLowerCase();
                 
                 let itemsHtml = '';
@@ -404,32 +414,28 @@
 
                 const orderIdDisplay = order.orderId || (order._id ? `#HB-${order._id.slice(-4).toUpperCase()}` : '#HB-0000');
                 
-                // --- FIX 1: PHONE NUMBER ---
-                // Added "order.customerPhone" primarily, as saved in your MongoDB
                 const customerName = order.customerName || (order.user && order.user.name) || (order.shippingAddress && order.shippingAddress.name) || 'Guest Customer';
                 const customerPhone = order.customerPhone || order.phone || order.phoneNo || (order.user && order.user.phone) || (order.shippingAddress && order.shippingAddress.phoneNo) || 'N/A';
-                
                 const addrObj = order.shippingAddress || {};
                 const customerAddress = order.address || [addrObj.address, addrObj.city, addrObj.postalCode].filter(Boolean).join(', ') || 'No Address Provided';
 
-                // --- FIX 2: PAYMENT STATUS ---
-                // Strict check to ONLY show "COD" or "Online Payment", ignoring "pending" from database for display
-                const paymentMethod = (order.paymentMethod || (order.paymentInfo && order.paymentInfo.method) || '').toLowerCase();
-                let isPaidStatus = 'COD';
-                let paymentColor = 'var(--secondary-color)'; // Yellowish for COD
-                
-                if (order.isPaid || paymentMethod === 'online' || paymentMethod === 'card' || paymentMethod === 'upi') {
-                    isPaidStatus = 'Online Payment';
-                    paymentColor = 'var(--info)'; // Blueish for Paid
-                } else {
-                    isPaidStatus = 'COD';
-                    paymentColor = 'var(--secondary-color)';
+                // --- NEW PAYMENT STATUS DISPLAY LOGIC ---
+                let methodLabel = isOnlinePayment ? 'Online Payment' : 'COD';
+                let statusLabel = (paymentStatusRaw === 'paid' || order.isPaid) ? 'Paid' : 'Pending';
+
+                let paymentColor = 'var(--secondary-color)'; // Default Yellowish for COD (Pending)
+                if (statusLabel === 'Paid') {
+                    paymentColor = 'var(--success)'; // Green if Paid
+                } else if (isOnlinePayment && statusLabel === 'Pending') {
+                    paymentColor = 'var(--danger)'; // Red if Online but Pending
                 }
+
+                // E.g., "COD (Pending)" or "Online Payment (Paid)"
+                let isPaidStatus = `${methodLabel} (${statusLabel})`;
 
                 const timeAgoText = formatTimeAgo(order.createdAt || order.date);
                 const totalAmount = order.totalPrice || order.totalAmount || 0;
 
-                // Reusable Customer Details HTML Block without changing CSS classes
                 const customerDetailsHtml = `
                     <div class="customer-info" style="flex-direction: column; align-items: flex-start; gap: 8px;">
                         <div style="font-weight: 500; font-size: 0.95rem; color: #fff;">
@@ -447,7 +453,7 @@
                     </div>
                 `;
 
-                // COLUMN 1: NEW ORDERS
+                // NEW ORDERS
                 if (status === 'placed' || status === 'new' || status === 'pending') {
                     countNew++;
                     newContainer.innerHTML += `
@@ -467,13 +473,13 @@
                                 <span class="total-price">₹${totalAmount}</span>
                             </div>
                             <div class="action-container">
-                                <button class="btn btn-accept" onclick="updateStatus('${order._id || order.id}', 'Preparing')">Accept</button>
-                                <button class="btn btn-reject" onclick="updateStatus('${order._id || order.id}', 'Cancelled')">Reject</button>
+                                <button class="btn btn-accept" onclick="updateStatus('${order._id || order.id}', 'Preparing', '${paymentMethod}')">Accept</button>
+                                <button class="btn btn-reject" onclick="updateStatus('${order._id || order.id}', 'Cancelled', '${paymentMethod}')">Reject</button>
                             </div>
                         </div>
                     `;
                 } 
-                // COLUMN 2: PREPARING
+                // PREPARING
                 else if (status === 'preparing' || status === 'processing' || status === 'cooking') {
                     countPreparing++;
                     preparingContainer.innerHTML += `
@@ -493,12 +499,12 @@
                                 <span class="total-price">₹${totalAmount}</span>
                             </div>
                             <div class="action-container">
-                                <button class="btn btn-ready" onclick="updateStatus('${order._id || order.id}', 'Ready')">Mark Food Ready</button>
+                                <button class="btn btn-ready" onclick="updateStatus('${order._id || order.id}', 'Ready', '${paymentMethod}')">Mark Food Ready</button>
                             </div>
                         </div>
                     `;
                 } 
-                // COLUMN 3: READY FOR PICKUP
+                // READY FOR PICKUP / DELIVERED HANDOVER
                 else if (status === 'ready' || status === 'ready for pickup') {
                     countReady++;
                     readyContainer.innerHTML += `
@@ -518,7 +524,7 @@
                                 <span class="total-price">₹${totalAmount}</span>
                             </div>
                             <div class="action-container">
-                                <button class="btn btn-dispatch" onclick="updateStatus('${order._id || order.id}', 'Delivered')">Handover to Rider</button>
+                                <button class="btn btn-dispatch" onclick="updateStatus('${order._id || order.id}', 'Delivered', '${paymentMethod}')">Mark as Delivered</button>
                             </div>
                         </div>
                     `;
@@ -533,9 +539,18 @@
             }
         }
 
-        async function updateStatus(orderId, newStatus) {
+        async function updateStatus(orderId, newStatus, payMethod = 'cod') {
             const token = localStorage.getItem('token') || localStorage.getItem('homebite_token') || localStorage.getItem('adminToken') || "";
             
+            let bodyData = { status: newStatus };
+            
+            // LOGIC: Agar order COD hai, aur ab aapne "Delivered" mark kar diya, 
+            // toh automatically backend ko bata do ki payment mil gaya (isPaid: true)
+            if (newStatus === 'Delivered' && payMethod.toLowerCase() === 'cod') {
+                bodyData.isPaid = true;
+                bodyData.paymentStatus = 'paid';
+            }
+
             try {
                 const response = await fetch(`${BASE_URL}/api/orders/${orderId}/status`, {
                     method: 'PUT',
@@ -543,7 +558,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': token ? `Bearer ${token}` : ""
                     },
-                    body: JSON.stringify({ status: newStatus }) 
+                    body: JSON.stringify(bodyData) 
                 });
                 
                 if (response.ok) {
