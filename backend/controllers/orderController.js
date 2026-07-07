@@ -1,7 +1,8 @@
-// 🔥 Naya function: Admin ke liye saare orders fetch karega
+const Order = require('../models/orderModel'); // Maan lo aapka Order Model backend/models/ me hai
+
+// 🔥 1. Admin ke liye saare orders fetch karne ka function
 const getAllOrdersForAdmin = async (req, res) => {
     try {
-        // Maan lo tumhara Order Model ka naam 'Order' hai
         // .sort({ createdAt: -1 }) se naye orders sabse upar dikhenge
         const orders = await Order.find({}).sort({ createdAt: -1 }); 
         res.status(200).json(orders);
@@ -10,10 +11,30 @@ const getAllOrdersForAdmin = async (req, res) => {
     }
 };
 
-// module.exports me isko bhi add kar dena baki functions ke sath
+// 🔥 2. Admin ke liye order status update karne ka function (Accept/Reject/Ready/Delivered)
+const updateOrderStatus = async (req, res) => {
+    try {
+        const { id } = req.params; // Route se order id milegi (e.g. /api/orders/123/status)
+        const { status } = req.body; // Frontend se status milega (e.g. { status: "Preparing" })
+
+        const updatedOrder = await Order.findByIdAndUpdate(
+            id,
+            { status: status },
+            { new: true } // Taki updated order return ho
+        );
+
+        if (!updatedOrder) {
+            return res.status(404).json({ message: 'Order nahi mila!' });
+        }
+
+        res.status(200).json({ message: 'Order status updated successfully', updatedOrder });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error while updating status', error: error.message });
+    }
+};
+
+// === FIX: Module exports me sirf wahi functions hain jo upar banaye hain ===
 module.exports = {
-    placeOrder,
-    getMyOrders,
-    verifyPayment,
-    getAllOrdersForAdmin // <-- Isko add karo
+    getAllOrdersForAdmin,
+    updateOrderStatus
 };
