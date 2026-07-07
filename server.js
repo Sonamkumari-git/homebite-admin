@@ -31,7 +31,6 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// === YAHAN CHANGE KIYA HAI ===
 // extensions: ['html'] add karne se server apne aap .html files ko bina extension ke read kar lega
 app.use(express.static(__dirname, { extensions: ['html'] }));
 
@@ -43,9 +42,13 @@ app.get('/', (req, res) => {
 // Backend APIs Routes
 const menuRoutes = require('./backend/routes/menuRoutes');
 const adminRoutes = require('./backend/routes/adminRoutes');
+// 🔥 FIX 1: Orders route ko yahan import kiya
+const orderRoutes = require('./backend/routes/orderRoutes'); 
 
 app.use('/api/menu', menuRoutes);
 app.use('/api/admin', adminRoutes);
+// 🔥 FIX 2: Orders route ko base path '/api/orders' ke saath connect kiya
+app.use('/api/orders', orderRoutes); 
 
 // Server Start
 const PORT = process.env.PORT || 5000;
