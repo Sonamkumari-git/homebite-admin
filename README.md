@@ -399,7 +399,7 @@ Access to XMLHttpRequest has been blocked by CORS policy
 3. Set environment variables in Render dashboard
 4. Deploy
 
-**Live URL Example:** `https://homebite-admin.onrender.com`
+**Live Admin Dashboard:** https://homebite-admin.onrender.com
 
 ### Deploy to Heroku
 
