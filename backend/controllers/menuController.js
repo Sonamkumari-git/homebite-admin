@@ -13,15 +13,15 @@ const addMenuItem = async (req, res) => {
     try {
         let { image } = req.body;
 
-        // Agar frontend se base64 image mili hai, toh Cloudinary par upload karo
+        
         if (image && image.startsWith('data:image')) {
             const uploadResponse = await cloudinary.uploader.upload(image, {
-                folder: 'homebite_menu' // Cloudinary par is naam ka folder ban jayega
+                folder: 'homebite_menu' 
             });
-            image = uploadResponse.secure_url; // Base64 string ko URL se replace kar diya
+            image = uploadResponse.secure_url; 
         }
 
-        // Naya item database mein save karein updated image URL ke sath
+       
         const newItem = new MenuItem({
             ...req.body,
             image: image
@@ -38,9 +38,9 @@ const addMenuItem = async (req, res) => {
 // 2. Get All Items
 const getMenuItems = async (req, res) => {
     try {
-        const items = await MenuItem.find().sort({ createdAt: -1 }); // Latest items pehle aayenge
-        // Frontend array accept karta hai, isliye seedhe array return kar rahe hain ya wrapper handle karein
-        // Hum pure items array bhej rahe hain kyunki frontend res.json() ko array ki tarah parse kar raha hai
+        const items = await MenuItem.find().sort({ createdAt: -1 }); // Latest items first
+        
+       
         res.status(200).json(items); 
     } catch (error) {
         res.status(500).json({ success: false, message: "Server error", error: error.message });
@@ -53,7 +53,7 @@ const updateMenuItem = async (req, res) => {
         const { id } = req.params;
         let updateData = { ...req.body };
 
-        // Agar user ne image change ki hai aur nayi base64 image aayi hai
+        
         if (updateData.image && updateData.image.startsWith('data:image')) {
             const uploadResponse = await cloudinary.uploader.upload(updateData.image, {
                 folder: 'homebite_menu'
