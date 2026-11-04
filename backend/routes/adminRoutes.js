@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const Admin = require('../models/adminModel'); // Path sahi hai na check kar lena
+const Admin = require('../models/adminModel'); 
 
-// 🔥 ADMIN LOGIN ROUTE (Yahan POST request aayegi)
+// 🔥 ADMIN LOGIN ROUTE 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -32,5 +32,5 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// 🔥 SUBSE IMPORTANT: Isko export karna zaroori hai taki server.js crash na ho!
+
 module.exports = router;
