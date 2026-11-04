@@ -14,13 +14,13 @@ const getAllOrdersForAdmin = async (req, res) => {
 
 const updateOrderStatus = async (req, res) => {
     try {
-        const { id } = req.params; // Route se order id milegi (e.g. /api/orders/123/status)
-        const { status } = req.body; // Frontend se status milega (e.g. { status: "Preparing" })
+        const { id } = req.params; // Route se order id milegi 
+        const { status } = req.body; // Frontend se status milega 
 
         const updatedOrder = await Order.findByIdAndUpdate(
             id,
             { status: status },
-            { returnDocument: 'after' } // 🔥 FIX: Warning hatane ke liye 'returnDocument' use kiya
+            { returnDocument: 'after' } 
         );
 
         if (!updatedOrder) {
