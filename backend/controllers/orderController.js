@@ -1,9 +1,9 @@
-const Order = require('../models/orderModel'); // Maan lo aapka Order Model backend/models/ me hai
+const Order = require('../models/orderModel'); 
 
-// 🔥 1. Admin ke liye saare orders fetch karne ka function
+
 const getAllOrdersForAdmin = async (req, res) => {
     try {
-        // .sort({ createdAt: -1 }) se naye orders sabse upar dikhenge
+        
         const orders = await Order.find({}).sort({ createdAt: -1 }); 
         res.status(200).json(orders);
     } catch (error) {
@@ -11,7 +11,7 @@ const getAllOrdersForAdmin = async (req, res) => {
     }
 };
 
-// 🔥 2. Admin ke liye order status update karne ka function (Accept/Reject/Ready/Delivered)
+
 const updateOrderStatus = async (req, res) => {
     try {
         const { id } = req.params; // Route se order id milegi (e.g. /api/orders/123/status)
@@ -33,7 +33,7 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
-// === FIX: Module exports me sirf wahi functions hain jo upar banaye hain ===
+
 module.exports = {
     getAllOrdersForAdmin,
     updateOrderStatus
