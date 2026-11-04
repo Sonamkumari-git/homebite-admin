@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const Admin = require('../models/adminModel'); 
 
-// 🔥 ADMIN LOGIN ROUTE 
+//  ADMIN LOGIN ROUTE 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -12,7 +12,7 @@ router.post('/login', async (req, res) => {
         const admin = await Admin.findOne({ email });
 
         if (admin && (await bcrypt.compare(password, admin.password))) {
-            // JWT Token generate ho raha hai same secret key se
+            
             const token = jwt.sign(
                 { id: admin._id, email: admin.email },
                 'homebite_super_secret_key_2026', 
